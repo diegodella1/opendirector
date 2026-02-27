@@ -2,38 +2,62 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import type { Show } from '@/lib/types';
+import { useRouter } from 'next/navigation';
+import type { Show, Template } from '@/lib/types';
 
 export default function HomePage() {
+  const router = useRouter();
   const [shows, setShows] = useState<Show[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [newShowName, setNewShowName] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [saveTemplateShowId, setSaveTemplateShowId] = useState<string | null>(null);
+  const [templateName, setTemplateName] = useState('');
 
   const fetchShows = async () => {
     const res = await fetch('/api/shows');
-    if (res.ok) {
-      setShows(await res.json());
-    }
+    if (res.ok) setShows(await res.json());
     setLoading(false);
+  };
+
+  const fetchTemplates = async () => {
+    const res = await fetch('/api/templates');
+    if (res.ok) setTemplates(await res.json());
   };
 
   useEffect(() => {
     fetchShows();
+    fetchTemplates();
   }, []);
 
   const createShow = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newShowName.trim()) return;
 
-    const res = await fetch('/api/shows', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newShowName.trim() }),
-    });
-
-    if (res.ok) {
-      setNewShowName('');
-      fetchShows();
+    if (selectedTemplateId) {
+      // Create from template
+      const res = await fetch(`/api/shows/from-template/${selectedTemplateId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newShowName.trim() }),
+      });
+      if (res.ok) {
+        const show = await res.json();
+        setNewShowName('');
+        setSelectedTemplateId('');
+        router.push(`/shows/${show.id}/edit`);
+      }
+    } else {
+      const res = await fetch('/api/shows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newShowName.trim() }),
+      });
+      if (res.ok) {
+        setNewShowName('');
+        fetchShows();
+      }
     }
   };
 
@@ -41,6 +65,20 @@ export default function HomePage() {
     if (!confirm('Delete this show?')) return;
     await fetch(`/api/shows/${id}`, { method: 'DELETE' });
     fetchShows();
+  };
+
+  const saveAsTemplate = async () => {
+    if (!saveTemplateShowId || !templateName.trim()) return;
+    const res = await fetch('/api/templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ showId: saveTemplateShowId, name: templateName.trim() }),
+    });
+    if (res.ok) {
+      setSaveTemplateShowId(null);
+      setTemplateName('');
+      fetchTemplates();
+    }
   };
 
   const statusColors: Record<string, string> = {
@@ -59,7 +97,7 @@ export default function HomePage() {
       </header>
 
       {/* New Show Form */}
-      <form onSubmit={createShow} className="flex gap-3 mb-8">
+      <form onSubmit={createShow} className="flex gap-3 mb-4">
         <input
           type="text"
           value={newShowName}
@@ -67,6 +105,18 @@ export default function HomePage() {
           placeholder="New show name..."
           className="flex-1 px-4 py-2 bg-od-surface border border-od-surface-light rounded-lg text-white placeholder-od-text-dim focus:outline-none focus:border-od-accent"
         />
+        <select
+          value={selectedTemplateId}
+          onChange={(e) => setSelectedTemplateId(e.target.value)}
+          className="px-3 py-2 bg-od-surface border border-od-surface-light rounded-lg text-od-text-dim text-sm focus:outline-none focus:border-od-accent"
+        >
+          <option value="">Blank show</option>
+          {templates.map((t) => (
+            <option key={t.id} value={t.id}>
+              From: {t.name}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
           className="px-6 py-2 bg-od-accent text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
@@ -74,6 +124,34 @@ export default function HomePage() {
           New Show
         </button>
       </form>
+
+      {/* Save Template Modal */}
+      {saveTemplateShowId && (
+        <div className="mb-6 p-4 bg-od-surface border border-od-surface-light rounded-lg">
+          <h3 className="text-white text-sm font-medium mb-2">Save as Template</h3>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="Template name..."
+              className="flex-1 px-3 py-2 bg-od-bg-dark border border-od-surface-light rounded text-sm text-white placeholder-od-text-dim focus:outline-none focus:border-od-accent"
+            />
+            <button
+              onClick={saveAsTemplate}
+              className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-500 transition-colors"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => setSaveTemplateShowId(null)}
+              className="px-4 py-2 bg-od-surface-light text-od-text rounded text-sm hover:bg-od-surface-light/80 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Shows List */}
       {loading ? (
@@ -112,11 +190,26 @@ export default function HomePage() {
                     Edit
                   </Link>
                   <Link
+                    href={`/shows/${show.id}/live`}
+                    className="px-4 py-1.5 bg-od-tally-pgm/20 text-od-tally-pgm rounded hover:bg-od-tally-pgm/30 transition-colors text-sm font-medium"
+                  >
+                    Go Live
+                  </Link>
+                  <Link
                     href={`/shows/${show.id}/prompter`}
                     className="px-4 py-1.5 bg-od-surface-light text-od-text rounded hover:bg-od-surface-light/80 transition-colors text-sm"
                   >
                     Prompter
                   </Link>
+                  <button
+                    onClick={() => {
+                      setSaveTemplateShowId(show.id);
+                      setTemplateName(show.name);
+                    }}
+                    className="px-3 py-1.5 text-od-accent hover:bg-od-accent/20 rounded transition-colors text-sm"
+                  >
+                    Save Template
+                  </button>
                   <button
                     onClick={() => deleteShow(show.id)}
                     className="px-3 py-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors text-sm"

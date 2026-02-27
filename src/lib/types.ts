@@ -148,3 +148,100 @@ export interface TallyState {
   recording?: boolean;
   streaming?: boolean;
 }
+
+// Signal sent to talent via prompter
+export interface Signal {
+  id: string;
+  show_id: string;
+  type: 'countdown' | 'wrap' | 'stretch' | 'standby' | 'go' | 'custom';
+  value: string | null;
+  expires_at: string | null;
+  acknowledged: boolean;
+  created_at: string;
+}
+
+// Template metadata (stored in od_templates)
+export interface Template {
+  id: string;
+  name: string;
+  description: string | null;
+  filename: string;
+  is_builtin: boolean;
+  created_at: string;
+}
+
+// Template JSON snapshot format
+export interface TemplateSnapshot {
+  version: number;
+  name: string;
+  config: Partial<ShowConfig>;
+  blocks: {
+    name: string;
+    position: number;
+    estimated_duration_sec: number;
+    script: string | null;
+    elements: {
+      type: string;
+      position: number;
+      title: string | null;
+      subtitle: string | null;
+      duration_sec: number | null;
+      style: string;
+      mode: string;
+      trigger_type: string;
+      actions: {
+        phase: string;
+        step_label: string | null;
+        position: number;
+        vmix_function: string;
+        target: string | null;
+        field: string | null;
+        value: string | null;
+        delay_ms: number;
+      }[];
+    }[];
+  }[];
+  people: { name: string; role: string | null }[];
+}
+
+// Media file metadata (stored in od_media)
+export interface MediaFile {
+  id: string;
+  show_id: string;
+  filename: string;
+  original_name: string;
+  mime_type: string;
+  size_bytes: number;
+  codec: string | null;
+  container: string | null;
+  width: number | null;
+  height: number | null;
+  duration_sec: number | null;
+  fps: number | null;
+  thumbnail_path: string | null;
+  checksum: string | null;
+  vmix_compatible: boolean;
+  created_at: string;
+}
+
+// Undo history entry (stored in od_undo_history)
+export interface UndoEntry {
+  id: string;
+  show_id: string;
+  action_type: string;
+  forward_data: Record<string, unknown>;
+  reverse_data: Record<string, unknown>;
+  created_at: string;
+}
+
+// Live state for Go Live panel
+export interface LiveState {
+  currentBlockId: string | null;
+  currentBlockStartedAt: string | null;
+  showStartedAt: string | null;
+  signals: Signal[];
+  executionLog: ExecutionLogEntry[];
+  tally: TallyState;
+}
+
+export type ShowStatus = Show['status'];

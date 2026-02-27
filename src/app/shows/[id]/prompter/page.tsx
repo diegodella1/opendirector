@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import type { PrompterConfig, Signal } from '@/lib/types';
 
 interface BlockScript {
   id: string;
@@ -10,6 +11,53 @@ interface BlockScript {
   script: string;
 }
 
+// IndexedDB helpers for offline cache
+const DB_NAME = 'od-prompter';
+const STORE_NAME = 'scripts';
+
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      req.result.createObjectStore(STORE_NAME);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function cacheScripts(showId: string, scripts: BlockScript[]) {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(scripts, showId);
+  } catch { /* ignore */ }
+}
+
+async function getCachedScripts(showId: string): Promise<BlockScript[] | null> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(showId);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch {
+    return null;
+  }
+}
+
+// Signal display config
+const SIGNAL_DISPLAY: Record<string, { text: string; color: string; blink: boolean }> = {
+  countdown: { text: '', color: 'bg-yellow-500 text-black', blink: false },
+  wrap: { text: 'WRAP', color: 'bg-red-600 text-white', blink: true },
+  stretch: { text: 'STRETCH', color: 'bg-blue-500 text-white', blink: false },
+  standby: { text: 'STANDBY', color: 'bg-yellow-500 text-black', blink: false },
+  go: { text: 'GO', color: 'bg-green-500 text-white', blink: false },
+  custom: { text: '', color: 'bg-purple-600 text-white', blink: false },
+};
+
 export default function PrompterPage() {
   const params = useParams();
   const showId = params.id as string;
@@ -17,32 +65,58 @@ export default function PrompterPage() {
 
   const [scripts, setScripts] = useState<BlockScript[]>([]);
   const [showName, setShowName] = useState('');
-  const [scrollSpeed, setScrollSpeed] = useState(0); // 0 = paused
+  const [scrollSpeed, setScrollSpeed] = useState(0);
   const [fontSize, setFontSize] = useState(48);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMirrored, setIsMirrored] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [activeSignal, setActiveSignal] = useState<Signal | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
-  // Load scripts from rundown
+  // Config from DB
+  const [config, setConfig] = useState<PrompterConfig | null>(null);
+
+  // Load scripts + config
   useEffect(() => {
     const load = async () => {
-      const res = await fetch(`/api/shows/${showId}/rundown`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setShowName(data.show.name);
-      setScripts(
-        data.blocks
+      try {
+        const res = await fetch(`/api/shows/${showId}/rundown`);
+        if (!res.ok) throw new Error('fetch failed');
+        const data = await res.json();
+        setShowName(data.show.name);
+
+        const blockScripts = data.blocks
           .filter((b: BlockScript) => b.script)
           .map((b: BlockScript) => ({
             id: b.id,
             name: b.name,
             position: b.position,
             script: b.script,
-          }))
-      );
+          }));
+        setScripts(blockScripts);
+        cacheScripts(showId, blockScripts);
+
+        // Apply prompter config
+        if (data.prompter_config) {
+          setConfig(data.prompter_config);
+          setFontSize(data.prompter_config.font_size || 48);
+          setScrollSpeed(0);
+        }
+        setIsOffline(false);
+      } catch {
+        // Try IndexedDB cache
+        const cached = await getCachedScripts(showId);
+        if (cached) {
+          setScripts(cached);
+          setIsOffline(true);
+        }
+      }
     };
     load();
   }, [showId]);
 
-  // WebSocket for live script updates
+  // WebSocket for live script updates + signals
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
@@ -59,6 +133,7 @@ export default function PrompterPage() {
         return;
       }
 
+      // Script updates
       if (msg.channel === 'rundown' && msg.type === 'block_updated' && msg.payload.changes.script !== undefined) {
         setScripts((prev) =>
           prev.map((s) =>
@@ -68,6 +143,42 @@ export default function PrompterPage() {
           )
         );
       }
+
+      // Signals
+      if (msg.channel === 'signals' && msg.type === 'signal') {
+        const signal = msg.payload as Signal;
+        setActiveSignal(signal);
+
+        if (signal.type === 'countdown' && signal.value) {
+          let sec = parseInt(signal.value, 10);
+          setCountdown(sec);
+          const timer = setInterval(() => {
+            sec--;
+            if (sec <= 0) {
+              clearInterval(timer);
+              setActiveSignal(null);
+              setCountdown(null);
+            } else {
+              setCountdown(sec);
+            }
+          }, 1000);
+        } else if (signal.type === 'go') {
+          setTimeout(() => setActiveSignal(null), 3000);
+        } else if (signal.type !== 'wrap') {
+          setTimeout(() => setActiveSignal(null), 10000);
+        }
+      }
+
+      if (msg.channel === 'signals' && msg.type === 'signals_cleared') {
+        setActiveSignal(null);
+        setCountdown(null);
+      }
+
+      // Config updates
+      if (msg.channel === 'prompter' && msg.type === 'config_updated') {
+        setConfig(msg.payload);
+        if (msg.payload.font_size) setFontSize(msg.payload.font_size);
+      }
     };
 
     return () => ws.close();
@@ -76,13 +187,11 @@ export default function PrompterPage() {
   // Auto-scroll
   useEffect(() => {
     if (scrollSpeed === 0) return;
-
     const interval = setInterval(() => {
       if (containerRef.current) {
         containerRef.current.scrollTop += scrollSpeed;
       }
-    }, 1000 / 60); // 60fps
-
+    }, 1000 / 60);
     return () => clearInterval(interval);
   }, [scrollSpeed]);
 
@@ -91,7 +200,7 @@ export default function PrompterPage() {
     switch (e.key) {
       case ' ':
         e.preventDefault();
-        setScrollSpeed((prev) => (prev > 0 ? 0 : 2));
+        setScrollSpeed((prev) => (prev > 0 ? 0 : config?.default_scroll_speed || 2));
         break;
       case 'ArrowUp':
         e.preventDefault();
@@ -120,18 +229,38 @@ export default function PrompterPage() {
           }
         }
         break;
+      case 'm':
+      case 'M':
+        if (!e.ctrlKey && !e.metaKey) {
+          setIsMirrored((prev) => !prev);
+        }
+        break;
+      case 'c':
+      case 'C':
+        if (!e.ctrlKey && !e.metaKey) {
+          setShowConfig((prev) => !prev);
+        }
+        break;
     }
-  }, []);
+  }, [config]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  // Save config
+  const saveConfig = async (updates: Partial<PrompterConfig>) => {
+    await fetch(`/api/shows/${showId}/prompter-config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+  };
+
   // Render script text with markup
   const renderScript = (text: string) => {
     return text.split('\n').map((line, i) => {
-      // [PAUSA] markers
       if (line.trim() === '[PAUSA]') {
         return (
           <div key={i} className="my-8 text-center">
@@ -140,7 +269,6 @@ export default function PrompterPage() {
         );
       }
 
-      // [VTR: name] markers
       const vtrMatch = line.match(/^\[VTR:\s*(.+)\]$/);
       if (vtrMatch) {
         return (
@@ -150,7 +278,6 @@ export default function PrompterPage() {
         );
       }
 
-      // (instructions) in grey
       if (line.trim().startsWith('(') && line.trim().endsWith(')')) {
         return (
           <p key={i} className="text-gray-500 italic" style={{ fontSize: fontSize * 0.6 }}>
@@ -159,12 +286,10 @@ export default function PrompterPage() {
         );
       }
 
-      // --- separator
       if (line.trim() === '---') {
         return <hr key={i} className="border-gray-600 my-6" />;
       }
 
-      // Regular text (bold handling)
       const parts = line.split(/(\*\*[^*]+\*\*)/g);
       return (
         <p key={i} className="leading-relaxed">
@@ -183,41 +308,136 @@ export default function PrompterPage() {
     });
   };
 
+  const guidePos = config?.guide_position ?? 33;
+  const textColor = config?.color_text || '#ffffff';
+  const bgColor = config?.color_bg || '#000000';
+  const marginPct = config?.margin_percent ?? 15;
+
   return (
-    <div className="h-screen bg-black text-white flex flex-col">
-      {/* Controls bar (hidden in fullscreen) */}
+    <div
+      className="h-screen flex flex-col"
+      style={{
+        backgroundColor: bgColor,
+        color: textColor,
+        transform: isMirrored ? 'scaleX(-1)' : 'none',
+      }}
+    >
+      {/* Offline banner */}
+      {isOffline && (
+        <div className="bg-yellow-600 text-black text-center py-1 text-sm font-bold shrink-0"
+          style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}>
+          OFFLINE — Using cached scripts
+        </div>
+      )}
+
+      {/* Signal overlay */}
+      {activeSignal && (
+        <div
+          className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-6 ${
+            SIGNAL_DISPLAY[activeSignal.type]?.color || 'bg-gray-600 text-white'
+          } ${SIGNAL_DISPLAY[activeSignal.type]?.blink ? 'animate-pulse' : ''}`}
+          style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}
+        >
+          <span className="text-4xl font-black tracking-wider">
+            {activeSignal.type === 'countdown' && countdown !== null
+              ? `${countdown}s`
+              : activeSignal.type === 'custom'
+              ? activeSignal.value
+              : SIGNAL_DISPLAY[activeSignal.type]?.text || activeSignal.type.toUpperCase()}
+          </span>
+        </div>
+      )}
+
+      {/* Controls bar */}
       {!isFullscreen && (
-        <div className="bg-gray-900 px-4 py-2 flex items-center justify-between text-sm shrink-0">
+        <div className="bg-gray-900 px-4 py-2 flex items-center justify-between text-sm shrink-0"
+          style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}>
           <span className="text-gray-400">{showName} — Prompter</span>
           <div className="flex items-center gap-4">
-            <span className="text-gray-400">
-              Speed: {scrollSpeed.toFixed(1)}
-            </span>
-            <span className="text-gray-400">
-              Font: {fontSize}px
-            </span>
+            <span className="text-gray-400">Speed: {scrollSpeed.toFixed(1)}</span>
+            <span className="text-gray-400">Font: {fontSize}px</span>
+            {isMirrored && <span className="text-cyan-400 text-xs">MIRROR</span>}
             <span className="text-gray-500 text-xs">
-              Space=play/pause | Arrows=speed | +/-=font | F=fullscreen
+              Space=play | Arrows=speed | +/-=font | F=full | M=mirror | C=config
             </span>
           </div>
         </div>
       )}
 
-      {/* Guide line at 1/3 */}
+      {/* Config panel */}
+      {showConfig && (
+        <div className="bg-gray-900 border-b border-gray-700 px-4 py-3 shrink-0 grid grid-cols-4 gap-4 text-sm"
+          style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}>
+          <div>
+            <label className="text-gray-400 text-xs block mb-1">Font Size</label>
+            <input
+              type="range" min={16} max={120} value={fontSize}
+              onChange={(e) => {
+                const v = parseInt(e.target.value);
+                setFontSize(v);
+                saveConfig({ font_size: v });
+              }}
+              className="w-full"
+            />
+            <span className="text-gray-400 text-xs">{fontSize}px</span>
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs block mb-1">Scroll Speed</label>
+            <input
+              type="range" min={0} max={10} step={0.5} value={config?.default_scroll_speed || 2}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                saveConfig({ default_scroll_speed: v });
+              }}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs block mb-1">Guide Position</label>
+            <input
+              type="range" min={10} max={80} value={guidePos}
+              onChange={(e) => {
+                const v = parseInt(e.target.value);
+                saveConfig({ guide_position: v });
+              }}
+              className="w-full"
+            />
+            <span className="text-gray-400 text-xs">{guidePos}%</span>
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs block mb-1">Margin</label>
+            <input
+              type="range" min={5} max={30} value={marginPct}
+              onChange={(e) => {
+                const v = parseInt(e.target.value);
+                saveConfig({ margin_percent: v });
+              }}
+              className="w-full"
+            />
+            <span className="text-gray-400 text-xs">{marginPct}%</span>
+          </div>
+        </div>
+      )}
+
+      {/* Guide line */}
       <div className="relative flex-1 overflow-hidden">
         <div
           className="absolute left-0 right-0 border-t border-red-500/30 pointer-events-none z-10"
-          style={{ top: '33%' }}
+          style={{ top: `${guidePos}%` }}
         />
 
         {/* Script content */}
         <div
           ref={containerRef}
-          className="h-full overflow-y-auto px-[15%]"
-          style={{ fontSize: `${fontSize}px`, lineHeight: 1.5 }}
+          className="h-full overflow-y-auto"
+          style={{
+            fontSize: `${fontSize}px`,
+            lineHeight: config?.line_height || 1.5,
+            paddingLeft: `${marginPct}%`,
+            paddingRight: `${marginPct}%`,
+          }}
         >
-          {/* Top padding (so first line starts at guide) */}
-          <div style={{ height: '33vh' }} />
+          <div style={{ height: `${guidePos}vh` }} />
 
           {scripts.length === 0 ? (
             <p className="text-gray-600 text-center" style={{ fontSize: '24px' }}>
@@ -234,8 +454,7 @@ export default function PrompterPage() {
             ))
           )}
 
-          {/* Bottom padding (so last line reaches guide) */}
-          <div style={{ height: '67vh' }} />
+          <div style={{ height: `${100 - guidePos}vh` }} />
         </div>
       </div>
     </div>

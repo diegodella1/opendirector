@@ -4,6 +4,24 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useRundownStore } from '@/stores/rundown-store';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import type { Element } from '@/lib/types';
+import MediaBrowser from '@/components/MediaBrowser';
 
 // Element type icons/labels
 const elementTypeLabels: Record<string, { label: string; color: string }> = {
@@ -13,6 +31,146 @@ const elementTypeLabels: Record<string, { label: string; color: string }> = {
   audio: { label: 'AUD', color: 'bg-cyan-600' },
   note: { label: 'NOTE', color: 'bg-gray-500' },
 };
+
+// Sortable block item
+function SortableBlock({
+  block,
+  idx,
+  isSelected,
+  onSelect,
+  onDelete,
+}: {
+  block: { id: string; name: string; elements: Element[]; script: string | null };
+  idx: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: block.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      onClick={onSelect}
+      className={`p-3 border-b border-od-surface-light cursor-pointer transition-colors ${
+        isSelected
+          ? 'bg-od-accent/20 border-l-2 border-l-od-accent'
+          : 'hover:bg-od-surface/50'
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span
+            {...attributes}
+            {...listeners}
+            className="text-od-text-dim text-xs cursor-grab active:cursor-grabbing select-none px-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            ⠿
+          </span>
+          <span className="text-od-text-dim text-xs font-mono w-6">
+            {String(idx + 1).padStart(2, '0')}
+          </span>
+          <span className="text-white text-sm font-medium truncate">
+            {block.name}
+          </span>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="text-red-400/50 hover:text-red-400 text-xs transition-colors"
+        >
+          &times;
+        </button>
+      </div>
+      {block.elements.length > 0 && (
+        <div className="flex gap-1 mt-1.5 ml-12">
+          {block.elements.map((el) => {
+            const info = elementTypeLabels[el.type] || { label: '?', color: 'bg-gray-500' };
+            return (
+              <span
+                key={el.id}
+                className={`${info.color} text-white text-[10px] px-1.5 py-0.5 rounded`}
+              >
+                {info.label}
+              </span>
+            );
+          })}
+        </div>
+      )}
+      {block.script && (
+        <p className="text-od-text-dim text-xs mt-1 ml-12 truncate">
+          {block.script.substring(0, 50)}...
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Sortable element item
+function SortableElement({
+  el,
+  onDelete,
+}: {
+  el: Element;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: el.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const info = elementTypeLabels[el.type] || { label: '?', color: 'bg-gray-500' };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 p-3 bg-od-surface border border-od-surface-light rounded-lg"
+    >
+      <span
+        {...attributes}
+        {...listeners}
+        className="text-od-text-dim text-xs cursor-grab active:cursor-grabbing select-none"
+      >
+        ⠿
+      </span>
+      <span className={`${info.color} text-white text-xs px-2 py-0.5 rounded font-medium`}>
+        {info.label}
+      </span>
+      <span className="text-white text-sm flex-1">
+        {el.title || 'Untitled'}
+      </span>
+      {el.subtitle && (
+        <span className="text-od-text-dim text-xs">{el.subtitle}</span>
+      )}
+      {el.duration_sec && (
+        <span className="text-od-text-dim text-xs font-mono">{el.duration_sec}s</span>
+      )}
+      <span className="text-od-text-dim text-xs">{el.trigger_type}</span>
+      <button
+        onClick={onDelete}
+        className="text-red-400/50 hover:text-red-400 text-sm transition-colors"
+      >
+        &times;
+      </button>
+    </div>
+  );
+}
 
 export default function EditorPage() {
   const params = useParams();
@@ -29,6 +187,10 @@ export default function EditorPage() {
     deleteBlock,
     addElement,
     deleteElement,
+    reorderBlocks,
+    reorderElements,
+    undo,
+    redo,
     selectBlock,
     connectWs,
     disconnectWs,
@@ -38,11 +200,33 @@ export default function EditorPage() {
   const [editingScript, setEditingScript] = useState<string | null>(null);
   const [scriptText, setScriptText] = useState('');
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
   useEffect(() => {
     loadRundown(showId);
     connectWs(showId);
     return () => disconnectWs();
   }, [showId, loadRundown, connectWs, disconnectWs]);
+
+  // Keyboard shortcuts: Ctrl+Z = undo, Ctrl+Y / Ctrl+Shift+Z = redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo(showId);
+      } else if (
+        (e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))
+      ) {
+        e.preventDefault();
+        redo(showId);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showId, undo, redo]);
 
   const handleAddBlock = useCallback(async () => {
     if (!newBlockName.trim()) return;
@@ -65,6 +249,40 @@ export default function EditorPage() {
     };
     await addElement(showId, blockId, { type, title: titles[type] || 'New Element' });
   }, [showId, addElement]);
+
+  const handleBlockDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const oldIdx = blocks.findIndex((b) => b.id === active.id);
+      const newIdx = blocks.findIndex((b) => b.id === over.id);
+      if (oldIdx === -1 || newIdx === -1) return;
+      const newOrder = [...blocks];
+      const [moved] = newOrder.splice(oldIdx, 1);
+      newOrder.splice(newIdx, 0, moved);
+      reorderBlocks(showId, newOrder.map((b) => b.id));
+    },
+    [blocks, showId, reorderBlocks]
+  );
+
+  const handleElementDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      if (!selectedBlockId) return;
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
+      if (!selectedBlock) return;
+      const els = selectedBlock.elements;
+      const oldIdx = els.findIndex((e) => e.id === active.id);
+      const newIdx = els.findIndex((e) => e.id === over.id);
+      if (oldIdx === -1 || newIdx === -1) return;
+      const newOrder = [...els];
+      const [moved] = newOrder.splice(oldIdx, 1);
+      newOrder.splice(newIdx, 0, moved);
+      reorderElements(showId, selectedBlockId, newOrder.map((e) => e.id));
+    },
+    [blocks, selectedBlockId, showId, reorderElements]
+  );
 
   if (!show) {
     return (
@@ -94,6 +312,12 @@ export default function EditorPage() {
           <span className={`text-xs px-2 py-0.5 rounded ${wsConnected ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'}`}>
             {wsConnected ? 'WS Connected' : 'WS Disconnected'}
           </span>
+          <Link
+            href={`/shows/${showId}/live`}
+            className="text-sm px-3 py-1 bg-od-tally-pgm/20 text-od-tally-pgm rounded hover:bg-od-tally-pgm/30 transition-colors font-medium"
+          >
+            Go Live
+          </Link>
           <Link
             href={`/shows/${showId}/prompter`}
             className="text-sm px-3 py-1 bg-od-surface-light rounded hover:bg-od-accent/30 transition-colors"
@@ -127,64 +351,34 @@ export default function EditorPage() {
             </div>
           </div>
 
-          {/* Block List */}
+          {/* Block List with DnD */}
           <div className="flex-1 overflow-y-auto">
             {blocks.length === 0 ? (
               <p className="text-od-text-dim text-sm p-4 text-center">
                 No blocks yet. Add one above.
               </p>
             ) : (
-              blocks.map((block, idx) => (
-                <div
-                  key={block.id}
-                  onClick={() => selectBlock(block.id)}
-                  className={`p-3 border-b border-od-surface-light cursor-pointer transition-colors ${
-                    selectedBlockId === block.id
-                      ? 'bg-od-accent/20 border-l-2 border-l-od-accent'
-                      : 'hover:bg-od-surface/50'
-                  }`}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleBlockDragEnd}
+              >
+                <SortableContext
+                  items={blocks.map((b) => b.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-od-text-dim text-xs font-mono w-6">
-                        {String(idx + 1).padStart(2, '0')}
-                      </span>
-                      <span className="text-white text-sm font-medium truncate">
-                        {block.name}
-                      </span>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteBlock(showId, block.id);
-                      }}
-                      className="text-red-400/50 hover:text-red-400 text-xs transition-colors"
-                    >
-                      &times;
-                    </button>
-                  </div>
-                  {block.elements.length > 0 && (
-                    <div className="flex gap-1 mt-1.5 ml-8">
-                      {block.elements.map((el) => {
-                        const info = elementTypeLabels[el.type] || { label: '?', color: 'bg-gray-500' };
-                        return (
-                          <span
-                            key={el.id}
-                            className={`${info.color} text-white text-[10px] px-1.5 py-0.5 rounded`}
-                          >
-                            {info.label}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {block.script && (
-                    <p className="text-od-text-dim text-xs mt-1 ml-8 truncate">
-                      {block.script.substring(0, 50)}...
-                    </p>
-                  )}
-                </div>
-              ))
+                  {blocks.map((block, idx) => (
+                    <SortableBlock
+                      key={block.id}
+                      block={block}
+                      idx={idx}
+                      isSelected={selectedBlockId === block.id}
+                      onSelect={() => selectBlock(block.id)}
+                      onDelete={() => deleteBlock(showId, block.id)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
             )}
           </div>
         </div>
@@ -264,7 +458,7 @@ export default function EditorPage() {
                 )}
               </div>
 
-              {/* Elements Section */}
+              {/* Elements Section with DnD */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-medium text-od-text-dim uppercase tracking-wider">
@@ -290,44 +484,32 @@ export default function EditorPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {selectedBlock.elements.map((el) => {
-                      const info = elementTypeLabels[el.type] || { label: '?', color: 'bg-gray-500' };
-                      return (
-                        <div
-                          key={el.id}
-                          className="flex items-center gap-3 p-3 bg-od-surface border border-od-surface-light rounded-lg"
-                        >
-                          <span className={`${info.color} text-white text-xs px-2 py-0.5 rounded font-medium`}>
-                            {info.label}
-                          </span>
-                          <span className="text-white text-sm flex-1">
-                            {el.title || 'Untitled'}
-                          </span>
-                          {el.subtitle && (
-                            <span className="text-od-text-dim text-xs">
-                              {el.subtitle}
-                            </span>
-                          )}
-                          {el.duration_sec && (
-                            <span className="text-od-text-dim text-xs font-mono">
-                              {el.duration_sec}s
-                            </span>
-                          )}
-                          <span className="text-od-text-dim text-xs">
-                            {el.trigger_type}
-                          </span>
-                          <button
-                            onClick={() => deleteElement(showId, selectedBlock.id, el.id)}
-                            className="text-red-400/50 hover:text-red-400 text-sm transition-colors"
-                          >
-                            &times;
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleElementDragEnd}
+                  >
+                    <SortableContext
+                      items={selectedBlock.elements.map((e) => e.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-2">
+                        {selectedBlock.elements.map((el) => (
+                          <SortableElement
+                            key={el.id}
+                            el={el}
+                            onDelete={() => deleteElement(showId, selectedBlock.id, el.id)}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 )}
+              </div>
+
+              {/* Media Section */}
+              <div className="mt-6">
+                <MediaBrowser showId={showId} />
               </div>
 
               {/* Notes Section */}

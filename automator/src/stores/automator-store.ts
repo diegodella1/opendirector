@@ -48,7 +48,7 @@ interface AutomatorState {
 let seqCounter = 0;
 
 export const useAutomatorStore = create<AutomatorState>((set, get) => ({
-  serverUrl: 'http://192.168.1.14:3000',
+  serverUrl: 'http://100.92.92.27:3000',
   vmixHost: '127.0.0.1',
   vmixPort: 8099,
   vmixConnected: false,

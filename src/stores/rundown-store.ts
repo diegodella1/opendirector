@@ -7,11 +7,20 @@ interface BlockWithElements extends Block {
   elements: Element[];
 }
 
+interface RedoEntry {
+  actionType: string;
+  forwardData: Record<string, unknown>;
+  reverseData: Record<string, unknown>;
+}
+
 interface RundownState {
   // Data
   show: Show | null;
   blocks: BlockWithElements[];
   selectedBlockId: string | null;
+
+  // Undo/Redo
+  redoStack: RedoEntry[];
 
   // WebSocket
   ws: WebSocket | null;
@@ -25,6 +34,10 @@ interface RundownState {
   addElement: (showId: string, blockId: string, element: { type: string; title?: string; subtitle?: string }) => Promise<void>;
   updateElement: (showId: string, blockId: string, elementId: string, changes: Partial<Element>) => Promise<void>;
   deleteElement: (showId: string, blockId: string, elementId: string) => Promise<void>;
+  reorderBlocks: (showId: string, order: string[]) => Promise<void>;
+  reorderElements: (showId: string, blockId: string, order: string[]) => Promise<void>;
+  undo: (showId: string) => Promise<void>;
+  redo: (showId: string) => Promise<void>;
   selectBlock: (blockId: string | null) => void;
   connectWs: (showId: string) => void;
   disconnectWs: () => void;
@@ -34,6 +47,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
   show: null,
   blocks: [],
   selectedBlockId: null,
+  redoStack: [],
   ws: null,
   wsConnected: false,
 
@@ -146,6 +160,77 @@ export const useRundownStore = create<RundownState>((set, get) => ({
     }));
   },
 
+  reorderBlocks: async (showId, order) => {
+    // Optimistic update
+    set((state) => {
+      const blockMap = new Map(state.blocks.map((b) => [b.id, b]));
+      const reordered = order
+        .map((id, idx) => {
+          const block = blockMap.get(id);
+          return block ? { ...block, position: idx } : null;
+        })
+        .filter(Boolean) as BlockWithElements[];
+      return { blocks: reordered };
+    });
+    await fetch(`/api/shows/${showId}/blocks/reorder`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order }),
+    });
+  },
+
+  reorderElements: async (showId, blockId, order) => {
+    // Optimistic update
+    set((state) => ({
+      blocks: state.blocks.map((b) => {
+        if (b.id !== blockId) return b;
+        const elMap = new Map(b.elements.map((e) => [e.id, e]));
+        const reordered = order
+          .map((id, idx) => {
+            const el = elMap.get(id);
+            return el ? { ...el, position: idx } : null;
+          })
+          .filter(Boolean) as Element[];
+        return { ...b, elements: reordered };
+      }),
+    }));
+    await fetch(`/api/shows/${showId}/blocks/${blockId}/elements/reorder`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order }),
+    });
+  },
+
+  undo: async (showId) => {
+    const res = await fetch(`/api/shows/${showId}/undo`, { method: 'POST' });
+    if (!res.ok) return;
+    const { actionType, forwardData, reverseData } = await res.json();
+    // Push to redo stack
+    set((state) => ({
+      redoStack: [...state.redoStack, { actionType, forwardData, reverseData }],
+    }));
+    // Reload rundown to sync state
+    get().loadRundown(showId);
+  },
+
+  redo: async (showId) => {
+    const { redoStack } = get();
+    if (redoStack.length === 0) return;
+    const entry = redoStack[redoStack.length - 1];
+    const res = await fetch(`/api/shows/${showId}/redo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
+    if (!res.ok) return;
+    // Pop from redo stack
+    set((state) => ({
+      redoStack: state.redoStack.slice(0, -1),
+    }));
+    // Reload rundown to sync state
+    get().loadRundown(showId);
+  },
+
   selectBlock: (blockId) => set({ selectedBlockId: blockId }),
 
   connectWs: (showId) => {
@@ -224,7 +309,50 @@ export const useRundownStore = create<RundownState>((set, get) => ({
               ),
             }));
             break;
+          case 'blocks_reordered': {
+            const order: string[] = msg.payload.order;
+            set((state) => {
+              const blockMap = new Map(state.blocks.map((b) => [b.id, b]));
+              const reordered = order
+                .map((id, idx) => {
+                  const block = blockMap.get(id);
+                  return block ? { ...block, position: idx } : null;
+                })
+                .filter(Boolean) as BlockWithElements[];
+              return { blocks: reordered };
+            });
+            break;
+          }
+          case 'elements_reordered': {
+            const { blockId: reorderBlockId, order: elOrder } = msg.payload;
+            set((state) => ({
+              blocks: state.blocks.map((b) => {
+                if (b.id !== reorderBlockId) return b;
+                const elMap = new Map(b.elements.map((e) => [e.id, e]));
+                const reordered = elOrder
+                  .map((id: string, idx: number) => {
+                    const el = elMap.get(id);
+                    return el ? { ...el, position: idx } : null;
+                  })
+                  .filter(Boolean);
+                return { ...b, elements: reordered };
+              }),
+            }));
+            break;
+          }
         }
+      }
+
+      // Handle undo/redo — reload rundown
+      if (msg.channel === 'rundown' && (msg.type === 'undo_applied' || msg.type === 'redo_applied')) {
+        get().loadRundown(showId);
+      }
+
+      // Handle show status changes
+      if (msg.channel === 'execution' && msg.type === 'show_status_changed') {
+        set((state) => ({
+          show: state.show ? { ...state.show, status: msg.payload.status } : null,
+        }));
       }
     };
 

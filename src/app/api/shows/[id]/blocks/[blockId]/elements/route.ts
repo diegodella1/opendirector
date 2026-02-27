@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { recordUndoEntry } from '@/lib/undo';
 
 // GET /api/shows/:id/blocks/:blockId/elements
 export async function GET(
@@ -59,6 +60,14 @@ export async function POST(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // Record undo entry
+  await recordUndoEntry(
+    params.id,
+    'create_element',
+    { element: data },
+    { elementId: data.id }
+  );
 
   // Broadcast via WS
   if (global.__wsBroadcast) {

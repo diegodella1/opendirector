@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { recordUndoEntry } from '@/lib/undo';
 
 // GET /api/shows/:id/blocks
 export async function GET(
@@ -74,6 +75,14 @@ export async function POST(
       })
       .eq('id', params.id);
   }
+
+  // Record undo entry
+  await recordUndoEntry(
+    params.id,
+    'create_block',
+    { block: data },
+    { blockId: data.id }
+  );
 
   // Broadcast via WS
   if (global.__wsBroadcast) {
