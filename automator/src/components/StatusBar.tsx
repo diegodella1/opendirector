@@ -1,7 +1,11 @@
 import { useAutomatorStore } from '@/stores/automator-store';
 
 export function StatusBar() {
-  const { show, vmixConnected, wsConnected, vmixHost, vmixPort } = useAutomatorStore();
+  const { show, vmixConnected, wsConnected, vmixHost, vmixPort, mediaSyncStatus } = useAutomatorStore();
+  const mediaSynced = mediaSyncStatus.filter(m => m.status === 'synced').length;
+  const mediaTotal = mediaSyncStatus.length;
+  const allSynced = mediaTotal > 0 && mediaSynced === mediaTotal;
+  const hasDownloading = mediaSyncStatus.some(m => m.status === 'downloading');
 
   return (
     <div className="bg-od-surface border-b border-od-surface-light px-4 py-1.5 flex items-center justify-between shrink-0">
@@ -21,6 +25,12 @@ export function StatusBar() {
           <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-400' : 'bg-red-400'}`} />
           Server WS
         </span>
+        {mediaTotal > 0 && (
+          <span className={`flex items-center gap-1.5 ${allSynced ? 'text-green-400' : 'text-yellow-400'}`}>
+            <span className={`w-2 h-2 rounded-full ${allSynced ? 'bg-green-400' : 'bg-yellow-400'} ${hasDownloading ? 'animate-pulse' : ''}`} />
+            Media {mediaSynced}/{mediaTotal}
+          </span>
+        )}
       </div>
     </div>
   );

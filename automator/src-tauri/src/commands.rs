@@ -261,3 +261,70 @@ pub async fn get_status(state: State<'_, AppState>) -> Result<StatusInfo, String
         show_id: show.clone(),
     })
 }
+
+/// Set local media folder path.
+#[tauri::command]
+pub async fn set_media_folder(
+    state: State<'_, AppState>,
+    folder: String,
+) -> Result<(), String> {
+    let mut mf = state.media_folder.lock().await;
+    *mf = folder;
+    Ok(())
+}
+
+/// Fetch media list from server and sync missing files.
+#[tauri::command]
+pub async fn sync_media(
+    state: State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    let server_url = state.server_url.lock().await.clone()
+        .ok_or("Server not connected")?;
+    let show_id = state.show_id.lock().await.clone()
+        .ok_or("No show selected")?;
+    let media_folder = state.media_folder.lock().await.clone();
+
+    // Fetch media list from server
+    let url = format!(
+        "{}/api/shows/{}/media",
+        server_url.trim_end_matches('/'),
+        show_id
+    );
+    let resp = reqwest::get(&url)
+        .await
+        .map_err(|e| format!("Failed to fetch media list: {}", e))?;
+    let media_list: Vec<serde_json::Value> = resp
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse media list: {}", e))?;
+
+    // Create or update downloader
+    let mut media_guard = state.media.lock().await;
+    let downloader = media_guard.get_or_insert_with(|| {
+        crate::media::downloader::MediaDownloader::new(
+            std::path::PathBuf::from(&media_folder),
+            server_url.clone(),
+            show_id.clone(),
+        )
+    });
+    // Update connection info in case it changed
+    downloader.server_url = server_url;
+    downloader.show_id = show_id;
+    downloader.media_folder = std::path::PathBuf::from(&media_folder);
+
+    downloader.sync_all(media_list, app_handle).await;
+    Ok(())
+}
+
+/// Get current media sync status.
+#[tauri::command]
+pub async fn get_media_sync_status(
+    state: State<'_, AppState>,
+) -> Result<Vec<crate::media::downloader::MediaSyncState>, String> {
+    let media_guard = state.media.lock().await;
+    match media_guard.as_ref() {
+        Some(downloader) => Ok(downloader.get_status()),
+        None => Ok(vec![]),
+    }
+}

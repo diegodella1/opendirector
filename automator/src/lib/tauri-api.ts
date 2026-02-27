@@ -122,3 +122,31 @@ export async function listenEvent(
   }
   return () => {};
 }
+
+// Media sync commands
+export async function syncMedia(): Promise<void> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    await invoke('sync_media');
+    return;
+  }
+  console.log('[MOCK] sync_media');
+}
+
+export async function getMediaSyncStatus(): Promise<unknown[]> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    return invoke('get_media_sync_status') as Promise<unknown[]>;
+  }
+  console.log('[MOCK] get_media_sync_status');
+  return [];
+}
+
+export async function setMediaFolder(folder: string): Promise<void> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    await invoke('set_media_folder', { folder });
+    return;
+  }
+  console.log(`[MOCK] set_media_folder: ${folder}`);
+}

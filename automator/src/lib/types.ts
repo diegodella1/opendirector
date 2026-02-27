@@ -86,3 +86,13 @@ export interface LogEntry {
   message?: string;
   latencyMs?: number;
 }
+
+export interface MediaSyncState {
+  id: string;
+  original_name: string;
+  size_bytes: number;
+  status: 'pending' | 'downloading' | 'synced' | 'error';
+  progress?: number;        // 0-1
+  local_path?: string;
+  error?: string;
+}

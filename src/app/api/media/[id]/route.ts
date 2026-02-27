@@ -148,5 +148,14 @@ export async function DELETE(
       .eq('id', media.show_id);
   }
 
+  // Broadcast via WS
+  if (global.__wsBroadcast) {
+    global.__wsBroadcast(media.show_id, {
+      channel: 'media',
+      type: 'media_deleted',
+      payload: { mediaId: params.id },
+    });
+  }
+
   return NextResponse.json({ deleted: true });
 }

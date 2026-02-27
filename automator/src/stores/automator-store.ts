@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Show, ShowConfig, Block, LogEntry, TallyState, Action } from '@/lib/types';
-import { fetchRundown, fetchShows, connectWebSocket, executeCue, connectVmix } from '@/lib/tauri-api';
+import type { Show, ShowConfig, Block, LogEntry, TallyState, Action, MediaSyncState } from '@/lib/types';
+import { fetchRundown, fetchShows, connectWebSocket, executeCue, connectVmix, syncMedia, getMediaSyncStatus, setMediaFolder as setMediaFolderApi } from '@/lib/tauri-api';
 
 interface AutomatorState {
   // Connection
@@ -27,6 +27,16 @@ interface AutomatorState {
 
   // WS ref
   ws: WebSocket | null;
+
+  // Media sync
+  mediaFolder: string;
+  mediaSyncStatus: MediaSyncState[];
+  setMediaFolder: (folder: string) => void;
+  triggerMediaSync: () => Promise<void>;
+  updateMediaProgress: (id: string, progress: number) => void;
+  markMediaSynced: (id: string, localPath: string) => void;
+  markMediaError: (id: string, error: string) => void;
+  setMediaSyncStatus: (status: MediaSyncState[]) => void;
 
   // Actions
   setServerUrl: (url: string) => void;
@@ -63,6 +73,50 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
   executionLog: [],
   tally: { program: null, preview: null },
   ws: null,
+  mediaFolder: 'C:\\OpenDirector\\Media',
+  mediaSyncStatus: [],
+
+  setMediaFolder: (folder) => {
+    set({ mediaFolder: folder });
+    setMediaFolderApi(folder).catch(() => {});
+  },
+
+  triggerMediaSync: async () => {
+    try {
+      await syncMedia();
+      // Fetch status after sync starts
+      const status = await getMediaSyncStatus() as MediaSyncState[];
+      set({ mediaSyncStatus: status });
+    } catch (e) {
+      console.error('Failed to trigger media sync:', e);
+    }
+  },
+
+  updateMediaProgress: (id, progress) => {
+    set((s) => ({
+      mediaSyncStatus: s.mediaSyncStatus.map((m) =>
+        m.id === id ? { ...m, status: 'downloading' as const, progress } : m
+      ),
+    }));
+  },
+
+  markMediaSynced: (id, localPath) => {
+    set((s) => ({
+      mediaSyncStatus: s.mediaSyncStatus.map((m) =>
+        m.id === id ? { ...m, status: 'synced' as const, progress: 1, local_path: localPath } : m
+      ),
+    }));
+  },
+
+  markMediaError: (id, error) => {
+    set((s) => ({
+      mediaSyncStatus: s.mediaSyncStatus.map((m) =>
+        m.id === id ? { ...m, status: 'error' as const, error } : m
+      ),
+    }));
+  },
+
+  setMediaSyncStatus: (status) => set({ mediaSyncStatus: status }),
 
   setServerUrl: (url) => set({ serverUrl: url }),
   setVmixHost: (host) => set({ vmixHost: host }),
@@ -102,6 +156,9 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       ws.onclose = () => set({ wsConnected: false });
       ws.onopen = () => set({ wsConnected: true });
       set({ ws });
+
+      // Auto-trigger media sync
+      get().triggerMediaSync();
     } catch (e) {
       console.error('Failed to connect to show:', e);
     }
@@ -361,6 +418,20 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
         message: (payload?.error as string) || (payload?.vmixResult as string) || undefined,
         latencyMs: (payload?.latencyMs as number) || undefined,
       });
+    }
+
+    if (channel === 'media') {
+      if (type === 'media_uploaded') {
+        get().triggerMediaSync();
+      }
+      if (type === 'media_deleted') {
+        const mediaId = payload?.mediaId as string;
+        if (mediaId) {
+          set((s) => ({
+            mediaSyncStatus: s.mediaSyncStatus.filter((m) => m.id !== mediaId),
+          }));
+        }
+      }
     }
 
     if (channel === 'tally') {

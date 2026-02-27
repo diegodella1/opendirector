@@ -87,6 +87,9 @@ impl WsClient {
                                 "tally" => {
                                     let _ = app.emit("ws-tally", text.clone());
                                 }
+                                "media" => {
+                                    let _ = app.emit("ws-media", text.clone());
+                                }
                                 "prompter" => {
                                     // Automator ignores prompter messages
                                 }

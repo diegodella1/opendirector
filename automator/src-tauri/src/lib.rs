@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod execution;
+pub mod media;
 pub mod vmix;
 pub mod ws;
 
@@ -12,6 +13,8 @@ pub struct AppState {
     pub ws: Arc<Mutex<ws::client::WsClient>>,
     pub server_url: Arc<Mutex<Option<String>>>,
     pub show_id: Arc<Mutex<Option<String>>>,
+    pub media: Arc<Mutex<Option<media::downloader::MediaDownloader>>>,
+    pub media_folder: Arc<Mutex<String>>,
 }
 
 impl AppState {
@@ -21,6 +24,8 @@ impl AppState {
             ws: Arc::new(Mutex::new(ws::client::WsClient::new())),
             server_url: Arc::new(Mutex::new(None)),
             show_id: Arc::new(Mutex::new(None)),
+            media: Arc::new(Mutex::new(None)),
+            media_folder: Arc::new(Mutex::new("C:\\OpenDirector\\Media".to_string())),
         }
     }
 }
@@ -42,6 +47,9 @@ pub fn run() {
             commands::execute_step,
             commands::send_vmix_command,
             commands::get_status,
+            commands::set_media_folder,
+            commands::sync_media,
+            commands::get_media_sync_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

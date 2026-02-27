@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useAutomatorStore } from '@/stores/automator-store';
+import { listenEvent } from '@/lib/tauri-api';
 import { ConnectionScreen } from '@/components/ConnectionScreen';
 import { StatusBar } from '@/components/StatusBar';
 import { RundownPanel } from '@/components/RundownPanel';
@@ -82,6 +83,38 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  // Media sync event listeners
+  useEffect(() => {
+    const unlisteners: (() => void)[] = [];
+
+    const setupListeners = async () => {
+      unlisteners.push(await listenEvent('media-progress', (payload: unknown) => {
+        const p = payload as { id: string; progress: number };
+        useAutomatorStore.getState().updateMediaProgress(p.id, p.progress);
+      }));
+
+      unlisteners.push(await listenEvent('media-sync-complete', (payload: unknown) => {
+        const p = payload as { id: string; local_path: string };
+        useAutomatorStore.getState().markMediaSynced(p.id, p.local_path);
+      }));
+
+      unlisteners.push(await listenEvent('media-sync-error', (payload: unknown) => {
+        const p = payload as { id: string; error: string };
+        useAutomatorStore.getState().markMediaError(p.id, p.error);
+      }));
+
+      unlisteners.push(await listenEvent('ws-media', (payload: unknown) => {
+        try {
+          const msg = JSON.parse(payload as string);
+          useAutomatorStore.getState().handleWsMessage(msg);
+        } catch { /* ignore */ }
+      }));
+    };
+
+    setupListeners();
+    return () => { unlisteners.forEach(fn => fn()); };
+  }, []);
 
   if (!show) {
     return <ConnectionScreen />;

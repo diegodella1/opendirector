@@ -3,7 +3,7 @@ import { useAutomatorStore } from '@/stores/automator-store';
 import type { Show } from '@/lib/types';
 
 export function ConnectionScreen() {
-  const { serverUrl, vmixHost, vmixPort, setServerUrl, setVmixHost, setVmixPort, loadShows, shows, connectToShow, connectToVmix } = useAutomatorStore();
+  const { serverUrl, vmixHost, vmixPort, mediaFolder, setServerUrl, setVmixHost, setVmixPort, setMediaFolder, loadShows, shows, connectToShow, connectToVmix } = useAutomatorStore();
   const [selectedShowId, setSelectedShowId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -80,6 +80,16 @@ export function ConnectionScreen() {
             />
           </div>
         </div>
+
+        {/* Media Folder */}
+        <label className="block text-xs text-od-text-dim uppercase tracking-wider mb-1">Media Folder</label>
+        <input
+          type="text"
+          value={mediaFolder}
+          onChange={(e) => setMediaFolder(e.target.value)}
+          placeholder="C:\OpenDirector\Media"
+          className="w-full px-3 py-2 bg-od-bg border border-od-surface-light rounded text-white text-sm mb-4 focus:outline-none focus:border-od-accent"
+        />
 
         {error && (
           <p className="text-od-tally-pgm text-sm mb-4">{error}</p>

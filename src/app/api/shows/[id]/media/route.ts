@@ -97,5 +97,14 @@ export async function POST(
       .eq('id', params.id);
   }
 
+  // Broadcast via WS
+  if (global.__wsBroadcast) {
+    global.__wsBroadcast(params.id, {
+      channel: 'media',
+      type: 'media_uploaded',
+      payload: { media: data },
+    });
+  }
+
   return NextResponse.json(data, { status: 201 });
 }
