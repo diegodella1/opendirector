@@ -14,7 +14,7 @@ export async function GET(
     .from('od_media')
     .select('*')
     .eq('show_id', params.id)
-    .order('created_at', { ascending: false });
+    .order('uploaded_at', { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -71,7 +71,6 @@ export async function POST(
       width: metadata.width,
       height: metadata.height,
       duration_sec: metadata.duration_sec,
-      fps: metadata.fps,
       thumbnail_path: hasThumb ? `thumbs/${uuid}.jpg` : null,
       checksum,
       vmix_compatible: vmixCompatible,
