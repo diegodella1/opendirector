@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicedoc/tauri-v2/main/schema.json",
+  "productName": "OpenDirector Automator",
+  "version": "0.1.0",
+  "identifier": "com.opendirector.automator",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "title": "OpenDirector Automator",
+    "windows": [
+      {
+        "title": "OpenDirector Automator",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "wix": {
+        "language": "en-US"
+      }
+    }
+  }
+}

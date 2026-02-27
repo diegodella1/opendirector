@@ -1,0 +1,46 @@
+name: Build Automator (Windows MSI)
+
+on:
+  push:
+    paths:
+      - 'automator/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: automator/src-tauri
+
+      - name: Install frontend dependencies
+        working-directory: automator
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: automator
+
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opendirector-automator-msi
+          path: automator/src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error

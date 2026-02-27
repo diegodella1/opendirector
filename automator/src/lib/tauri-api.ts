@@ -1,0 +1,124 @@
+// Tauri API wrapper with mock fallback for browser development
+// When running in Tauri, uses invoke(). In browser, uses direct fetch/mock.
+
+const IS_TAURI = typeof window !== 'undefined' && '__TAURI__' in window;
+
+let tauriInvoke: ((cmd: string, args?: Record<string, unknown>) => Promise<unknown>) | null = null;
+let tauriListen: ((event: string, handler: (e: { payload: unknown }) => void) => Promise<() => void>) | null = null;
+
+// Lazy load Tauri APIs
+async function getInvoke() {
+  if (tauriInvoke) return tauriInvoke;
+  if (IS_TAURI) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    tauriInvoke = invoke;
+    return invoke;
+  }
+  return null;
+}
+
+async function getListen() {
+  if (tauriListen) return tauriListen;
+  if (IS_TAURI) {
+    const { listen } = await import('@tauri-apps/api/event');
+    tauriListen = listen;
+    return listen;
+  }
+  return null;
+}
+
+// Server URL for browser mode
+let _serverUrl = 'http://192.168.1.14:3000';
+
+export function setServerUrl(url: string) {
+  _serverUrl = url;
+}
+
+export function getServerUrl() {
+  return _serverUrl;
+}
+
+// Connect to vMix TCP (Tauri only, mock in browser)
+export async function connectVmix(host: string, port: number): Promise<boolean> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    await invoke('connect_vmix', { host, port });
+    return true;
+  }
+  console.log(`[MOCK] vMix connect to ${host}:${port}`);
+  return true;
+}
+
+export async function disconnectVmix(): Promise<void> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    await invoke('disconnect_vmix');
+    return;
+  }
+  console.log('[MOCK] vMix disconnected');
+}
+
+// Fetch rundown via HTTP (works in both modes)
+export async function fetchRundown(serverUrl: string, showId: string) {
+  const res = await fetch(`${serverUrl}/api/shows/${showId}/rundown`);
+  if (!res.ok) throw new Error(`Failed to fetch rundown: ${res.status}`);
+  return res.json();
+}
+
+// Fetch shows list
+export async function fetchShows(serverUrl: string) {
+  const res = await fetch(`${serverUrl}/api/shows`);
+  if (!res.ok) throw new Error(`Failed to fetch shows: ${res.status}`);
+  return res.json();
+}
+
+// WebSocket connection (works in both modes)
+export function connectWebSocket(serverUrl: string, showId: string) {
+  const wsUrl = serverUrl.replace('http', 'ws') + '/ws';
+  const ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: 'join', payload: { showId } }));
+  };
+
+  return ws;
+}
+
+// Execute CUE against vMix (Tauri: via Rust, browser: mock)
+export async function executeCue(
+  elementId: string,
+  actions: { vmix_function: string; target: string | null; field: string | null; value: string | null; delay_ms: number }[]
+): Promise<{ ok: boolean; latencyMs: number }> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    return invoke('execute_cue', { elementId, actions }) as Promise<{ ok: boolean; latencyMs: number }>;
+  }
+  // Mock: simulate execution
+  console.log(`[MOCK] CUE element ${elementId}:`, actions.map(a => a.vmix_function).join(' → '));
+  return { ok: true, latencyMs: 3 };
+}
+
+// Send raw vMix command (Tauri only)
+export async function sendVmixCommand(
+  func: string,
+  params: Record<string, string>
+): Promise<{ ok: boolean; response: string }> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    return invoke('send_vmix_command', { function: func, params }) as Promise<{ ok: boolean; response: string }>;
+  }
+  console.log(`[MOCK] vMix: FUNCTION ${func}`, params);
+  return { ok: true, response: `FUNCTION OK ${func}` };
+}
+
+// Listen for Tauri events (noop in browser mode)
+export async function listenEvent(
+  event: string,
+  handler: (payload: unknown) => void
+): Promise<() => void> {
+  const listen = await getListen();
+  if (listen) {
+    return listen(event, (e) => handler(e.payload));
+  }
+  return () => {};
+}
