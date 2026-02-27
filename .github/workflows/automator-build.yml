@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'automator/**'
+      - '.github/workflows/automator-build.yml'
   workflow_dispatch:
 
 jobs:
@@ -41,6 +42,17 @@ jobs:
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: opendirector-automator-msi
+          name: automator-${{ github.sha }}
           path: automator/src-tauri/target/release/bundle/msi/*.msi
           if-no-files-found: error
+          retention-days: 30
+
+      - name: Summary
+        shell: bash
+        run: |
+          echo "## Automator MSI Built" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${GITHUB_SHA::7}\` — $(git log -1 --pretty=%s)" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact:** \`automator-${GITHUB_SHA}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Download from the **Artifacts** section at the bottom of this workflow run." >> $GITHUB_STEP_SUMMARY
