@@ -19,6 +19,9 @@ interface AutomatorState {
   gtTemplates: GtTemplate[];
 
   // Execution
+  executionMode: 'auto' | 'manual';
+  requestedElementId: string | null;
+  processedKeys: Set<string>;
   currentBlockIdx: number;
   selectedElementId: string | null;
   executionLog: LogEntry[];
@@ -47,9 +50,11 @@ interface AutomatorState {
   connectToShow: (showId: string) => Promise<void>;
   connectToVmix: () => Promise<void>;
   disconnect: () => void;
+  setExecutionMode: (mode: 'auto' | 'manual') => void;
+  clearRequestedElement: () => void;
   selectElement: (elementId: string | null) => void;
-  nextBlock: () => void;
-  prevBlock: () => void;
+  nextBlock: (opts?: { fromRemote?: boolean }) => void;
+  prevBlock: (opts?: { fromRemote?: boolean }) => void;
   cueElement: (elementId: string) => Promise<void>;
   executeStep: (elementId: string, stepLabel: string) => Promise<void>;
   addLog: (entry: LogEntry) => void;
@@ -57,6 +62,7 @@ interface AutomatorState {
 }
 
 let seqCounter = 0;
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
 export const useAutomatorStore = create<AutomatorState>((set, get) => ({
   serverUrl: 'http://100.92.92.27:3000',
@@ -70,6 +76,9 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
   config: null,
   blocks: [],
   gtTemplates: [],
+  executionMode: 'manual',
+  requestedElementId: null,
+  processedKeys: new Set(),
   currentBlockIdx: 0,
   selectedElementId: null,
   executionLog: [],
@@ -120,6 +129,21 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
 
   setMediaSyncStatus: (status) => set({ mediaSyncStatus: status }),
 
+  setExecutionMode: (mode) => {
+    set({ executionMode: mode });
+    const { ws } = get();
+    if (ws?.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        channel: 'execution',
+        type: 'automator_mode',
+        timestamp: new Date().toISOString(),
+        payload: { mode, source: 'automator' },
+      }));
+    }
+  },
+
+  clearRequestedElement: () => set({ requestedElementId: null }),
+
   setServerUrl: (url) => set({ serverUrl: url }),
   setVmixHost: (host) => set({ vmixHost: host }),
   setVmixPort: (port) => set({ vmixPort: port }),
@@ -157,7 +181,29 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
         } catch { /* ignore */ }
       };
       ws.onclose = () => set({ wsConnected: false });
-      ws.onopen = () => set({ wsConnected: true });
+      ws.onopen = () => {
+        set({ wsConnected: true });
+        // Announce automator presence
+        const statusMsg = JSON.stringify({
+          channel: 'execution',
+          type: 'automator_status',
+          timestamp: new Date().toISOString(),
+          payload: { connected: true, mode: get().executionMode, source: 'automator' },
+        });
+        ws.send(statusMsg);
+        // Start heartbeat every 5s
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        heartbeatInterval = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              channel: 'execution',
+              type: 'automator_heartbeat',
+              timestamp: new Date().toISOString(),
+              payload: { mode: get().executionMode, source: 'automator' },
+            }));
+          }
+        }, 5000);
+      };
       set({ ws });
 
       // Auto-trigger media sync
@@ -187,6 +233,10 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
 
   disconnect: () => {
     const { ws } = get();
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
     if (ws) ws.close();
     set({
       show: null,
@@ -196,18 +246,20 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       wsConnected: false,
       vmixConnected: false,
       ws: null,
+      requestedElementId: null,
+      processedKeys: new Set(),
     });
   },
 
   selectElement: (elementId) => set({ selectedElementId: elementId }),
 
-  nextBlock: () => {
+  nextBlock: (opts) => {
     const { currentBlockIdx, blocks, ws, show } = get();
     if (currentBlockIdx < blocks.length - 1) {
       const newIdx = currentBlockIdx + 1;
       set({ currentBlockIdx: newIdx, selectedElementId: null });
 
-      if (ws && show) {
+      if (!opts?.fromRemote && ws && show) {
         ws.send(JSON.stringify({
           channel: 'execution',
           type: 'next_block',
@@ -232,13 +284,13 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
     }
   },
 
-  prevBlock: () => {
+  prevBlock: (opts) => {
     const { currentBlockIdx, blocks, ws, show } = get();
     if (currentBlockIdx > 0) {
       const newIdx = currentBlockIdx - 1;
       set({ currentBlockIdx: newIdx, selectedElementId: null });
 
-      if (ws && show) {
+      if (!opts?.fromRemote && ws && show) {
         ws.send(JSON.stringify({
           channel: 'execution',
           type: 'prev_block',
@@ -509,6 +561,74 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
     }
 
     if (channel === 'execution') {
+      // Skip own messages to avoid loops
+      if (payload?.source === 'automator') return;
+
+      // Dedup by idempotencyKey
+      const key = msg.idempotencyKey as string | undefined;
+      if (key) {
+        const { processedKeys } = get();
+        if (processedKeys.has(key)) return;
+        const next = new Set(processedKeys);
+        next.add(key);
+        // Keep set bounded
+        if (next.size > 500) {
+          const arr = Array.from(next);
+          arr.splice(0, 250);
+          set({ processedKeys: new Set(arr) });
+        } else {
+          set({ processedKeys: next });
+        }
+      }
+
+      const { executionMode, vmixConnected } = get();
+
+      if (type === 'cue') {
+        const elementId = payload?.elementId as string;
+        if (!elementId) return;
+
+        if (executionMode === 'auto') {
+          if (!vmixConnected) {
+            get().addLog({
+              id: crypto.randomUUID(),
+              timestamp: new Date().toISOString(),
+              type: 'cue',
+              result: 'error',
+              message: 'AUTO CUE rejected — vMix not connected',
+            });
+            return;
+          }
+          get().cueElement(elementId);
+        } else {
+          // MANUAL: highlight as requested
+          set({ requestedElementId: elementId });
+          get().addLog({
+            id: (msg.idempotencyKey as string) || crypto.randomUUID(),
+            timestamp: new Date().toISOString(),
+            type: 'cue',
+            elementTitle: (payload?.elementTitle as string) || undefined,
+            result: 'ok',
+            message: 'CUE requested (manual mode)',
+          });
+        }
+        return;
+      }
+
+      if (type === 'next_block') {
+        if (executionMode === 'auto') {
+          get().nextBlock({ fromRemote: true });
+        }
+        return;
+      }
+
+      if (type === 'prev_block') {
+        if (executionMode === 'auto') {
+          get().prevBlock({ fromRemote: true });
+        }
+        return;
+      }
+
+      // Default: log other execution messages
       get().addLog({
         id: (msg.idempotencyKey as string) || crypto.randomUUID(),
         timestamp: (msg.timestamp as string) || new Date().toISOString(),

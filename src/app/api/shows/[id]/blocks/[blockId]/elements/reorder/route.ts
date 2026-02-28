@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { rejectIfLive } from '@/lib/state-machine';
 import { recordUndoEntry } from '@/lib/undo';
 
 // PUT /api/shows/:id/blocks/:blockId/elements/reorder — reorder elements by ID array
@@ -7,6 +8,11 @@ export async function PUT(
   request: Request,
   { params }: { params: { id: string; blockId: string } }
 ) {
+  // Block element reorder while live
+  const { data: showCheck } = await supabase.from('od_shows').select('status').eq('id', params.id).single();
+  const rejected = rejectIfLive(showCheck?.status || 'draft', 'reorder elements');
+  if (rejected) return rejected;
+
   const body = await request.json();
   const order: string[] = body.order;
 

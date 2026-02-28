@@ -1,7 +1,7 @@
 import { useAutomatorStore } from '@/stores/automator-store';
 
 export function StatusBar() {
-  const { show, vmixConnected, wsConnected, vmixHost, vmixPort, mediaSyncStatus } = useAutomatorStore();
+  const { show, vmixConnected, wsConnected, vmixHost, vmixPort, mediaSyncStatus, executionMode, setExecutionMode } = useAutomatorStore();
   const mediaSynced = mediaSyncStatus.filter(m => m.status === 'synced').length;
   const mediaTotal = mediaSyncStatus.length;
   const allSynced = mediaTotal > 0 && mediaSynced === mediaTotal;
@@ -17,6 +17,18 @@ export function StatusBar() {
         <span className="text-xs text-od-text-dim">v{show?.version || 0}</span>
       </div>
       <div className="flex items-center gap-4 text-xs">
+        <button
+          onClick={() => setExecutionMode(executionMode === 'auto' ? 'manual' : 'auto')}
+          title={executionMode === 'auto' ? 'AUTO: CUE commands execute automatically' : 'MANUAL: CUE commands require operator confirmation'}
+          className={`flex items-center gap-1.5 px-2 py-0.5 rounded border transition-colors ${
+            executionMode === 'auto'
+              ? 'bg-green-600/30 text-green-400 border-green-600/50 hover:bg-green-600/40'
+              : 'bg-od-surface-light text-od-text-dim border-od-surface-light hover:bg-od-surface-light/80'
+          }`}
+        >
+          <span className={`w-2 h-2 rounded-full ${executionMode === 'auto' ? 'bg-green-400' : 'bg-gray-500'}`} />
+          {executionMode === 'auto' ? 'AUTO' : 'MANUAL'}
+        </button>
         <span className={`flex items-center gap-1.5 ${vmixConnected ? 'text-green-400' : 'text-red-400'}`}>
           <span className={`w-2 h-2 rounded-full ${vmixConnected ? 'bg-green-400' : 'bg-red-400'}`} />
           vMix {vmixHost}:{vmixPort}

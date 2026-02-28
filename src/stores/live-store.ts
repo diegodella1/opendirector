@@ -28,6 +28,13 @@ interface LiveStoreState {
   ws: WebSocket | null;
   wsConnected: boolean;
 
+  // Element execution state
+  triggeredElements: Set<string>;
+
+  // Automator tracking
+  automatorConnected: boolean;
+  automatorMode: 'auto' | 'manual' | 'unknown';
+
   // Actions
   loadShow: (showId: string) => Promise<void>;
   connectWs: (showId: string) => void;
@@ -35,7 +42,19 @@ interface LiveStoreState {
   sendSignal: (showId: string, type: string, value?: string) => Promise<void>;
   clearSignals: (showId: string) => Promise<void>;
   setCurrentBlock: (blockId: string | null) => void;
+
+  // Execution commands
+  sendExecutionCommand: (type: string, payload?: Record<string, unknown>) => void;
+  cueElement: (elementId: string) => void;
+  nextBlock: () => void;
+  prevBlock: () => void;
+  stopShow: () => Promise<void>;
+  goLive: () => Promise<void>;
+  goReady: () => Promise<void>;
+  goRehearsal: () => Promise<void>;
 }
+
+let automatorTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export const useLiveStore = create<LiveStoreState>((set, get) => ({
   showId: null,
@@ -48,6 +67,9 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   signals: [],
   executionLog: [],
   tally: { program: null, preview: null },
+  triggeredElements: new Set<string>(),
+  automatorConnected: false,
+  automatorMode: 'unknown',
   ws: null,
   wsConnected: false,
 
@@ -85,13 +107,37 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
         return;
       }
 
-      // Execution events → log
+      // Execution events → log + element tracking
       if (msg.channel === 'execution') {
+        // Automator presence tracking
+        if (msg.type === 'automator_status' || msg.type === 'automator_mode' || msg.type === 'automator_heartbeat') {
+          const mode = msg.payload?.mode as 'auto' | 'manual' | undefined;
+          set({
+            automatorConnected: true,
+            ...(mode ? { automatorMode: mode } : {}),
+          });
+          if (automatorTimeout) clearTimeout(automatorTimeout);
+          automatorTimeout = setTimeout(() => {
+            set({ automatorConnected: false, automatorMode: 'unknown' });
+          }, 10000);
+          return;
+        }
+
         if (msg.type === 'show_status_changed') {
           set({ showStatus: msg.payload.status });
           if (msg.payload.status === 'live') {
             set({ showStartedAt: new Date().toISOString() });
           }
+          if (msg.payload.status === 'ready') {
+            set({ showStartedAt: null, triggeredElements: new Set<string>() });
+          }
+        }
+        if (msg.type === 'cue_ack' && msg.payload?.elementId) {
+          set((state) => {
+            const next = new Set(state.triggeredElements);
+            next.add(msg.payload.elementId);
+            return { triggeredElements: next };
+          });
         }
         set((state) => ({
           executionLog: [
@@ -147,9 +193,13 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
 
   disconnectWs: () => {
     const { ws } = get();
+    if (automatorTimeout) {
+      clearTimeout(automatorTimeout);
+      automatorTimeout = null;
+    }
     if (ws) {
       ws.close();
-      set({ ws: null, wsConnected: false });
+      set({ ws: null, wsConnected: false, automatorConnected: false, automatorMode: 'unknown' });
     }
   },
 
@@ -167,5 +217,94 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
 
   setCurrentBlock: (blockId) => {
     set({ currentBlockId: blockId, blockStartedAt: new Date().toISOString() });
+  },
+
+  // Execution commands
+  sendExecutionCommand: (type, payload?) => {
+    const { ws } = get();
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({
+      channel: 'execution',
+      type,
+      idempotencyKey: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: new Date().toISOString(),
+      payload: { ...payload, source: 'go_live' },
+    }));
+  },
+
+  cueElement: (elementId) => {
+    get().sendExecutionCommand('cue', { elementId });
+  },
+
+  nextBlock: () => {
+    const { blocks, currentBlockId } = get();
+    const idx = blocks.findIndex((b) => b.id === currentBlockId);
+    if (idx < blocks.length - 1) {
+      const nextBlock = blocks[idx + 1];
+      get().setCurrentBlock(nextBlock.id);
+      get().sendExecutionCommand('next_block', { blockId: nextBlock.id });
+    }
+  },
+
+  prevBlock: () => {
+    const { blocks, currentBlockId } = get();
+    const idx = blocks.findIndex((b) => b.id === currentBlockId);
+    if (idx > 0) {
+      const prevBlock = blocks[idx - 1];
+      get().setCurrentBlock(prevBlock.id);
+      get().sendExecutionCommand('prev_block', { blockId: prevBlock.id });
+    }
+  },
+
+  stopShow: async () => {
+    const { showId } = get();
+    if (!showId) return;
+    const res = await fetch(`/api/shows/${showId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'ready' }),
+    });
+    if (res.ok) {
+      set({ showStatus: 'ready', showStartedAt: null, triggeredElements: new Set<string>() });
+    }
+  },
+
+  goLive: async () => {
+    const { showId } = get();
+    if (!showId) return;
+    const res = await fetch(`/api/shows/${showId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'live' }),
+    });
+    if (res.ok) {
+      set({ showStatus: 'live', showStartedAt: new Date().toISOString(), triggeredElements: new Set<string>() });
+    }
+  },
+
+  goReady: async () => {
+    const { showId } = get();
+    if (!showId) return;
+    const res = await fetch(`/api/shows/${showId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'ready' }),
+    });
+    if (res.ok) {
+      set({ showStatus: 'ready', showStartedAt: null, triggeredElements: new Set<string>() });
+    }
+  },
+
+  goRehearsal: async () => {
+    const { showId } = get();
+    if (!showId) return;
+    const res = await fetch(`/api/shows/${showId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'rehearsal' }),
+    });
+    if (res.ok) {
+      set({ showStatus: 'rehearsal' });
+    }
   },
 }));

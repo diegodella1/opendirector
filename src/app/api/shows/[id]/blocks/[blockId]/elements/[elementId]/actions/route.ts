@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { rejectIfLive } from '@/lib/state-machine';
 
 // GET /api/shows/:id/blocks/:blockId/elements/:elementId/actions
 export async function GET(
@@ -23,6 +24,11 @@ export async function POST(
   request: Request,
   { params }: { params: { id: string; blockId: string; elementId: string } }
 ) {
+  // Actions completely locked while live
+  const { data: showCheck } = await supabase.from('od_shows').select('status').eq('id', params.id).single();
+  const rejected = rejectIfLive(showCheck?.status || 'draft', 'create actions');
+  if (rejected) return rejected;
+
   const body = await request.json();
 
   if (!body.phase || !body.vmix_function) {

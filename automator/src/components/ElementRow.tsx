@@ -22,8 +22,9 @@ interface Props {
 }
 
 export function ElementRow({ element }: Props) {
-  const { selectedElementId, selectElement, cueElement, executeStep } = useAutomatorStore();
+  const { selectedElementId, selectElement, cueElement, executeStep, requestedElementId, clearRequestedElement } = useAutomatorStore();
   const isSelected = selectedElementId === element.id;
+  const isRequested = requestedElementId === element.id;
   const typeInfo = typeStyles[element.type] || { label: '?', bg: 'bg-gray-500' };
 
   const cueActions = element.actions.filter(a => a.phase === 'on_cue');
@@ -33,7 +34,9 @@ export function ElementRow({ element }: Props) {
     <div
       onClick={() => selectElement(element.id)}
       className={`flex items-center gap-2 px-2 py-1.5 rounded mt-1 cursor-pointer transition-colors ${
-        isSelected
+        isRequested
+          ? 'bg-yellow-600/20 ring-1 ring-yellow-400 animate-pulse'
+          : isSelected
           ? 'bg-od-accent/20 ring-1 ring-od-accent'
           : 'hover:bg-od-surface-light/50'
       }`}
@@ -58,10 +61,18 @@ export function ElementRow({ element }: Props) {
       {/* CUE button */}
       {cueActions.length > 0 && (
         <button
-          onClick={(e) => { e.stopPropagation(); cueElement(element.id); }}
-          className="px-2 py-0.5 bg-od-accent text-white text-[10px] font-bold rounded hover:bg-blue-500 transition-colors shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            cueElement(element.id);
+            if (isRequested) clearRequestedElement();
+          }}
+          className={`px-2 py-0.5 text-white text-[10px] font-bold rounded transition-colors shrink-0 ${
+            isRequested
+              ? 'bg-yellow-500 hover:bg-yellow-400 animate-pulse'
+              : 'bg-od-accent hover:bg-blue-500'
+          }`}
         >
-          CUE
+          {isRequested ? 'CUE!' : 'CUE'}
         </button>
       )}
 

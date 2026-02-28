@@ -38,17 +38,19 @@ function SortableBlock({
   block,
   idx,
   isSelected,
+  isLive,
   onSelect,
   onDelete,
 }: {
   block: { id: string; name: string; elements: Element[]; script: string | null };
   idx: number;
   isSelected: boolean;
+  isLive: boolean;
   onSelect: () => void;
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: block.id });
+    useSortable({ id: block.id, disabled: isLive });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -69,14 +71,16 @@ function SortableBlock({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span
-            {...attributes}
-            {...listeners}
-            className="text-od-text-dim text-xs cursor-grab active:cursor-grabbing select-none px-1"
-            onClick={(e) => e.stopPropagation()}
-          >
-            ⠿
-          </span>
+          {!isLive && (
+            <span
+              {...attributes}
+              {...listeners}
+              className="text-od-text-dim text-xs cursor-grab active:cursor-grabbing select-none px-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              ⠿
+            </span>
+          )}
           <span className="text-od-text-dim text-xs font-mono w-6">
             {String(idx + 1).padStart(2, '0')}
           </span>
@@ -84,15 +88,17 @@ function SortableBlock({
             {block.name}
           </span>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="text-red-400/50 hover:text-red-400 text-xs transition-colors"
-        >
-          &times;
-        </button>
+        {!isLive && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="text-red-400/50 hover:text-red-400 text-xs transition-colors"
+          >
+            &times;
+          </button>
+        )}
       </div>
       {block.elements.length > 0 && (
         <div className="flex gap-1 mt-1.5 ml-12">
@@ -122,16 +128,18 @@ function SortableBlock({
 function SortableElement({
   el,
   gtTemplates,
+  isLive,
   onDelete,
   onUpdate,
 }: {
   el: Element;
   gtTemplates: GtTemplate[];
+  isLive: boolean;
   onDelete: () => void;
   onUpdate: (changes: Partial<Element>) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: el.id });
+    useSortable({ id: el.id, disabled: isLive });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -152,13 +160,15 @@ function SortableElement({
       className="p-3 bg-od-surface border border-od-surface-light rounded-lg"
     >
       <div className="flex items-center gap-3">
-        <span
-          {...attributes}
-          {...listeners}
-          className="text-od-text-dim text-xs cursor-grab active:cursor-grabbing select-none"
-        >
-          ⠿
-        </span>
+        {!isLive && (
+          <span
+            {...attributes}
+            {...listeners}
+            className="text-od-text-dim text-xs cursor-grab active:cursor-grabbing select-none"
+          >
+            ⠿
+          </span>
+        )}
         <span className={`${info.color} text-white text-xs px-2 py-0.5 rounded font-medium`}>
           {info.label}
         </span>
@@ -172,12 +182,14 @@ function SortableElement({
           <span className="text-od-text-dim text-xs font-mono">{el.duration_sec}s</span>
         )}
         <span className="text-od-text-dim text-xs">{el.trigger_type}</span>
-        <button
-          onClick={onDelete}
-          className="text-red-400/50 hover:text-red-400 text-sm transition-colors"
-        >
-          &times;
-        </button>
+        {!isLive && (
+          <button
+            onClick={onDelete}
+            className="text-red-400/50 hover:text-red-400 text-sm transition-colors"
+          >
+            &times;
+          </button>
+        )}
       </div>
 
       {/* GT Template picker + field inputs */}
@@ -349,6 +361,7 @@ export default function EditorPage() {
     );
   }
 
+  const isLive = show.status === 'live';
   const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
 
   return (
@@ -360,7 +373,11 @@ export default function EditorPage() {
             &larr; Shows
           </Link>
           <h1 className="text-lg font-semibold text-white">{show.name}</h1>
-          <span className="text-xs text-od-text-dim uppercase bg-od-surface-light px-2 py-0.5 rounded">
+          <span className={`text-xs uppercase px-2 py-0.5 rounded font-bold ${
+            isLive ? 'bg-od-tally-pgm text-white animate-pulse' :
+            show.status === 'rehearsal' ? 'bg-od-warning text-black' :
+            'bg-od-surface-light text-od-text-dim'
+          }`}>
             {show.status}
           </span>
           <span className="text-xs text-od-text-dim">v{show.version}</span>
@@ -385,6 +402,14 @@ export default function EditorPage() {
         </div>
       </header>
 
+      {/* Live mode banner */}
+      {isLive && (
+        <div className="bg-od-tally-pgm/90 text-white px-4 py-2 text-sm font-medium flex items-center gap-3 shrink-0">
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          LIVE — Only scripts and notes can be edited. Structural changes are locked.
+        </div>
+      )}
+
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel — Blocks/Rundown */}
         <div className="w-80 bg-od-bg border-r border-od-surface-light flex flex-col shrink-0">
@@ -395,13 +420,15 @@ export default function EditorPage() {
                 type="text"
                 value={newBlockName}
                 onChange={(e) => setNewBlockName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddBlock()}
-                placeholder="New block..."
-                className="flex-1 px-3 py-1.5 bg-od-surface border border-od-surface-light rounded text-sm text-white placeholder-od-text-dim focus:outline-none focus:border-od-accent"
+                onKeyDown={(e) => e.key === 'Enter' && !isLive && handleAddBlock()}
+                placeholder={isLive ? 'Locked — show is live' : 'New block...'}
+                disabled={isLive}
+                className="flex-1 px-3 py-1.5 bg-od-surface border border-od-surface-light rounded text-sm text-white placeholder-od-text-dim focus:outline-none focus:border-od-accent disabled:opacity-40"
               />
               <button
                 onClick={handleAddBlock}
-                className="px-3 py-1.5 bg-od-accent text-white rounded text-sm hover:bg-blue-500 transition-colors"
+                disabled={isLive}
+                className="px-3 py-1.5 bg-od-accent text-white rounded text-sm hover:bg-blue-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Add
               </button>
@@ -430,6 +457,7 @@ export default function EditorPage() {
                       block={block}
                       idx={idx}
                       isSelected={selectedBlockId === block.id}
+                      isLive={isLive}
                       onSelect={() => selectBlock(block.id)}
                       onDelete={() => deleteBlock(showId, block.id)}
                     />
@@ -526,7 +554,8 @@ export default function EditorPage() {
                       <button
                         key={type}
                         onClick={() => handleAddElement(selectedBlock.id, type)}
-                        className={`${info.color} text-white text-xs px-2 py-1 rounded hover:opacity-80 transition-opacity`}
+                        disabled={isLive}
+                        className={`${info.color} text-white text-xs px-2 py-1 rounded hover:opacity-80 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed`}
                       >
                         + {info.label}
                       </button>
@@ -556,6 +585,7 @@ export default function EditorPage() {
                             key={el.id}
                             el={el}
                             gtTemplates={gtTemplates}
+                            isLive={isLive}
                             onDelete={() => deleteElement(showId, selectedBlock.id, el.id)}
                             onUpdate={(changes) => updateElement(showId, selectedBlock.id, el.id, changes)}
                           />

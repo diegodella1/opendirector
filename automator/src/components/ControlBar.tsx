@@ -10,7 +10,7 @@ export function ControlBar() {
       {/* Navigation */}
       <div className="flex items-center gap-2">
         <button
-          onClick={prevBlock}
+          onClick={() => prevBlock()}
           disabled={currentBlockIdx === 0}
           className="px-4 py-1.5 bg-od-surface-light text-od-text rounded text-sm font-medium hover:bg-od-accent/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
@@ -18,7 +18,7 @@ export function ControlBar() {
         </button>
 
         <button
-          onClick={nextBlock}
+          onClick={() => nextBlock()}
           disabled={currentBlockIdx >= totalBlocks - 1}
           className="px-6 py-1.5 bg-od-accent text-white rounded text-sm font-bold hover:bg-blue-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >

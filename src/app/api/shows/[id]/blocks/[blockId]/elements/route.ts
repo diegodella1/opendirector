@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { rejectIfLive } from '@/lib/state-machine';
 import { recordUndoEntry } from '@/lib/undo';
 
 // GET /api/shows/:id/blocks/:blockId/elements
@@ -24,6 +25,11 @@ export async function POST(
   request: Request,
   { params }: { params: { id: string; blockId: string } }
 ) {
+  // Block element creation while live
+  const { data: showCheck } = await supabase.from('od_shows').select('status').eq('id', params.id).single();
+  const rejected = rejectIfLive(showCheck?.status || 'draft', 'create elements');
+  if (rejected) return rejected;
+
   const body = await request.json();
 
   if (!body.type) {

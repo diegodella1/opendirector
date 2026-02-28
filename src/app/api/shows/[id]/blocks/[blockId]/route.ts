@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { filterLiveEdits } from '@/lib/state-machine';
+import { filterLiveEdits, rejectIfLive } from '@/lib/state-machine';
 import { recordUndoEntry } from '@/lib/undo';
 
 // GET /api/shows/:id/blocks/:blockId
@@ -101,6 +101,11 @@ export async function DELETE(
   _request: Request,
   { params }: { params: { id: string; blockId: string } }
 ) {
+  // Block deletion while live
+  const { data: showForDelete } = await supabase.from('od_shows').select('status').eq('id', params.id).single();
+  const rejected = rejectIfLive(showForDelete?.status || 'draft', 'delete blocks');
+  if (rejected) return rejected;
+
   // Snapshot for undo (block + elements + actions)
   const { data: blockSnap } = await supabase.from('od_blocks').select('*').eq('id', params.blockId).single();
   const { data: elemSnap } = await supabase.from('od_elements').select('*').eq('block_id', params.blockId);

@@ -1,4 +1,5 @@
 // Show state machine — valid transitions per the spec
+import { NextResponse } from 'next/server';
 import type { ShowStatus } from './types';
 
 const TRANSITIONS: Record<ShowStatus, ShowStatus[]> = {
@@ -24,6 +25,17 @@ export function validateTransition(
     };
   }
   return { valid: true };
+}
+
+// Reject destructive operations when show is live (create/delete/reorder)
+export function rejectIfLive(status: string, operation: string): NextResponse | null {
+  if (status === 'live') {
+    return NextResponse.json(
+      { error: `Cannot ${operation} while show is live` },
+      { status: 403 }
+    );
+  }
+  return null;
 }
 
 // Fields editable when show is live (only scripts and lower third text)
