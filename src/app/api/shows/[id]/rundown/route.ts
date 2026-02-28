@@ -6,12 +6,13 @@ export async function GET(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
-  // Fetch show + config + prompter config in parallel
-  const [showResult, configResult, prompterResult, blocksResult] = await Promise.all([
+  // Fetch show + config + prompter config + gt templates in parallel
+  const [showResult, configResult, prompterResult, blocksResult, gtResult] = await Promise.all([
     supabase.from('od_shows').select('*').eq('id', params.id).single(),
     supabase.from('od_show_config').select('*').eq('show_id', params.id).single(),
     supabase.from('od_prompter_config').select('*').eq('show_id', params.id).single(),
     supabase.from('od_blocks').select('*').eq('show_id', params.id).order('position'),
+    supabase.from('od_gt_templates').select('*').eq('show_id', params.id).order('position'),
   ]);
 
   if (showResult.error) {
@@ -86,6 +87,7 @@ export async function GET(
     show: showResult.data,
     config: configResult.data || null,
     prompter_config: prompterResult.data || null,
+    gt_templates: gtResult.data || [],
     blocks: blocks.map((b: { id: string }) => ({
       ...b,
       elements: elementsByBlock.get(b.id) || [],

@@ -34,6 +34,19 @@ export async function POST(
     return NextResponse.json({ error: 'file is required' }, { status: 400 });
   }
 
+  // Category: use explicit override or infer from mime type
+  const categoryOverride = formData.get('category') as string | null;
+  const validCategories = ['clip', 'stinger', 'graphic', 'lower_third', 'audio'];
+  let category: string | null = null;
+  if (categoryOverride && validCategories.includes(categoryOverride)) {
+    category = categoryOverride;
+  } else {
+    const mime = file.type || '';
+    if (mime.startsWith('video/')) category = 'clip';
+    else if (mime.startsWith('image/')) category = 'graphic';
+    else if (mime.startsWith('audio/')) category = 'audio';
+  }
+
   const mediaDir = await ensureMediaDir(params.id);
   const ext = path.extname(file.name) || '.bin';
   const uuid = randomUUID();
@@ -74,6 +87,7 @@ export async function POST(
       thumbnail_path: hasThumb ? `thumbs/${uuid}.jpg` : null,
       checksum,
       vmix_compatible: vmixCompatible,
+      category,
     })
     .select()
     .single();

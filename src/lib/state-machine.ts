@@ -35,7 +35,7 @@ export function isEditableInLive(
     return field === 'script' || field === 'notes';
   }
   if (entityType === 'element') {
-    return field === 'title' || field === 'subtitle';
+    return field === 'title' || field === 'subtitle' || field === 'gt_field_values';
   }
   return false;
 }

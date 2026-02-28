@@ -20,8 +20,9 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Element } from '@/lib/types';
+import type { Element, GtTemplate } from '@/lib/types';
 import MediaBrowser from '@/components/MediaBrowser';
+import GtTemplateManager from '@/components/GtTemplateManager';
 
 // Element type icons/labels
 const elementTypeLabels: Record<string, { label: string; color: string }> = {
@@ -117,13 +118,17 @@ function SortableBlock({
   );
 }
 
-// Sortable element item
+// Sortable element item with inline GT fields
 function SortableElement({
   el,
+  gtTemplates,
   onDelete,
+  onUpdate,
 }: {
   el: Element;
+  gtTemplates: GtTemplate[];
   onDelete: () => void;
+  onUpdate: (changes: Partial<Element>) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: el.id });
@@ -135,39 +140,89 @@ function SortableElement({
   };
 
   const info = elementTypeLabels[el.type] || { label: '?', color: 'bg-gray-500' };
+  const showGtPicker = el.type === 'lower_third' || el.type === 'graphic';
+  const selectedGt = showGtPicker && el.gt_template_id
+    ? gtTemplates.find(t => t.id === el.gt_template_id)
+    : null;
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 p-3 bg-od-surface border border-od-surface-light rounded-lg"
+      className="p-3 bg-od-surface border border-od-surface-light rounded-lg"
     >
-      <span
-        {...attributes}
-        {...listeners}
-        className="text-od-text-dim text-xs cursor-grab active:cursor-grabbing select-none"
-      >
-        ⠿
-      </span>
-      <span className={`${info.color} text-white text-xs px-2 py-0.5 rounded font-medium`}>
-        {info.label}
-      </span>
-      <span className="text-white text-sm flex-1">
-        {el.title || 'Untitled'}
-      </span>
-      {el.subtitle && (
-        <span className="text-od-text-dim text-xs">{el.subtitle}</span>
+      <div className="flex items-center gap-3">
+        <span
+          {...attributes}
+          {...listeners}
+          className="text-od-text-dim text-xs cursor-grab active:cursor-grabbing select-none"
+        >
+          ⠿
+        </span>
+        <span className={`${info.color} text-white text-xs px-2 py-0.5 rounded font-medium`}>
+          {info.label}
+        </span>
+        <span className="text-white text-sm flex-1">
+          {el.title || 'Untitled'}
+        </span>
+        {el.subtitle && (
+          <span className="text-od-text-dim text-xs">{el.subtitle}</span>
+        )}
+        {el.duration_sec && (
+          <span className="text-od-text-dim text-xs font-mono">{el.duration_sec}s</span>
+        )}
+        <span className="text-od-text-dim text-xs">{el.trigger_type}</span>
+        <button
+          onClick={onDelete}
+          className="text-red-400/50 hover:text-red-400 text-sm transition-colors"
+        >
+          &times;
+        </button>
+      </div>
+
+      {/* GT Template picker + field inputs */}
+      {showGtPicker && gtTemplates.length > 0 && (
+        <div className="mt-2 ml-8 space-y-2">
+          <select
+            value={el.gt_template_id || ''}
+            onChange={(e) => {
+              const tid = e.target.value || null;
+              const gt = tid ? gtTemplates.find(t => t.id === tid) : null;
+              // Initialize field values with defaults
+              const fieldValues = gt
+                ? Object.fromEntries(gt.fields.map(f => [f.name, f.default || '']))
+                : null;
+              onUpdate({ gt_template_id: tid, gt_field_values: fieldValues });
+            }}
+            className="px-2 py-1 bg-od-bg-dark border border-od-surface-light rounded text-xs text-white focus:outline-none focus:border-od-accent"
+          >
+            <option value="">Manual (no GT)</option>
+            {gtTemplates.map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+
+          {selectedGt && (
+            <div className="flex flex-wrap gap-2">
+              {selectedGt.fields.map(field => (
+                <div key={field.name} className="flex items-center gap-1">
+                  <label className="text-xs text-od-text-dim">{field.label}:</label>
+                  <input
+                    type="text"
+                    defaultValue={el.gt_field_values?.[field.name] || field.default || ''}
+                    onBlur={(e) => {
+                      const newValues = { ...el.gt_field_values, [field.name]: e.target.value };
+                      onUpdate({ gt_field_values: newValues });
+                    }}
+                    className="px-2 py-0.5 bg-od-bg-dark border border-od-surface-light rounded text-xs text-white w-36 focus:outline-none focus:border-od-accent"
+                    placeholder={field.default || field.label}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
-      {el.duration_sec && (
-        <span className="text-od-text-dim text-xs font-mono">{el.duration_sec}s</span>
-      )}
-      <span className="text-od-text-dim text-xs">{el.trigger_type}</span>
-      <button
-        onClick={onDelete}
-        className="text-red-400/50 hover:text-red-400 text-sm transition-colors"
-      >
-        &times;
-      </button>
     </div>
   );
 }
@@ -179,6 +234,7 @@ export default function EditorPage() {
   const {
     show,
     blocks,
+    gtTemplates,
     selectedBlockId,
     wsConnected,
     loadRundown,
@@ -186,6 +242,7 @@ export default function EditorPage() {
     updateBlock,
     deleteBlock,
     addElement,
+    updateElement,
     deleteElement,
     reorderBlocks,
     reorderElements,
@@ -498,13 +555,26 @@ export default function EditorPage() {
                           <SortableElement
                             key={el.id}
                             el={el}
+                            gtTemplates={gtTemplates}
                             onDelete={() => deleteElement(showId, selectedBlock.id, el.id)}
+                            onUpdate={(changes) => updateElement(showId, selectedBlock.id, el.id, changes)}
                           />
                         ))}
                       </div>
                     </SortableContext>
                   </DndContext>
                 )}
+              </div>
+
+              {/* GT Templates Section */}
+              <div className="mt-6">
+                <GtTemplateManager
+                  showId={showId}
+                  templates={gtTemplates}
+                  onCreated={() => loadRundown(showId)}
+                  onUpdated={() => loadRundown(showId)}
+                  onDeleted={() => loadRundown(showId)}
+                />
               </div>
 
               {/* Media Section */}

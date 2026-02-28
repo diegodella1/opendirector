@@ -67,6 +67,8 @@ export interface Element {
   trigger_type: 'manual' | 'on_cue' | 'on_block_start' | 'timecode' | 'on_keyword';
   trigger_config: Record<string, unknown> | null;
   vmix_input_key: string | null;
+  gt_template_id: string | null;
+  gt_field_values: Record<string, string> | null;
   sync_status: 'pending' | 'downloading' | 'synced' | 'error';
   status: 'pending' | 'ready' | 'triggered' | 'done';
 }
@@ -113,6 +115,7 @@ export interface WSMessage {
 export interface Rundown {
   show: Show;
   blocks: (Block & { elements: Element[] })[];
+  gt_templates: GtTemplate[];
 }
 
 // Full rundown with config and actions (for Automator)
@@ -120,6 +123,7 @@ export interface RundownFull {
   show: Show;
   config: ShowConfig | null;
   blocks: (Block & { elements: (Element & { actions: Action[] })[] })[];
+  gt_templates: GtTemplate[];
 }
 
 // Execution log entry
@@ -204,6 +208,25 @@ export interface TemplateSnapshot {
   people: { name: string; role: string | null }[];
 }
 
+// GT Template field definition
+export interface GtTemplateField {
+  name: string;    // vMix field name, e.g. "Headline.Text"
+  label: string;   // UI label, e.g. "Nombre"
+  default?: string;
+}
+
+// GT Template (stored in od_gt_templates)
+export interface GtTemplate {
+  id: string;
+  show_id: string;
+  name: string;
+  vmix_input_key: string;
+  overlay_number: number;
+  fields: GtTemplateField[];
+  position: number;
+  created_at: string;
+}
+
 // Media file metadata (stored in od_media)
 export interface MediaFile {
   id: string;
@@ -220,6 +243,7 @@ export interface MediaFile {
   fps: number | null;
   thumbnail_path: string | null;
   checksum: string | null;
+  category: 'clip' | 'stinger' | 'graphic' | 'lower_third' | 'audio' | null;
   vmix_compatible: boolean;
   created_at: string;
 }

@@ -2,6 +2,17 @@
 
 import { useState, useCallback, useRef } from 'react';
 
+type MediaCategory = 'auto' | 'clip' | 'stinger' | 'graphic' | 'lower_third' | 'audio';
+
+const CATEGORY_OPTIONS: { value: MediaCategory; label: string }[] = [
+  { value: 'auto', label: 'Auto-detect' },
+  { value: 'clip', label: 'Clip' },
+  { value: 'stinger', label: 'Stinger' },
+  { value: 'graphic', label: 'Graphic' },
+  { value: 'lower_third', label: 'Lower Third' },
+  { value: 'audio', label: 'Audio' },
+];
+
 interface MediaUploadProps {
   showId: string;
   onUploadComplete: () => void;
@@ -11,6 +22,7 @@ export default function MediaUpload({ showId, onUploadComplete }: MediaUploadPro
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [category, setCategory] = useState<MediaCategory>('auto');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const uploadFile = useCallback(async (file: File) => {
@@ -19,6 +31,9 @@ export default function MediaUpload({ showId, onUploadComplete }: MediaUploadPro
 
     const formData = new FormData();
     formData.append('file', file);
+    if (category !== 'auto') {
+      formData.append('category', category);
+    }
 
     try {
       const res = await fetch(`/api/shows/${showId}/media`, {
@@ -39,7 +54,7 @@ export default function MediaUpload({ showId, onUploadComplete }: MediaUploadPro
       setUploading(false);
       setTimeout(() => setProgress(''), 3000);
     }
-  }, [showId, onUploadComplete]);
+  }, [showId, onUploadComplete, category]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -57,6 +72,15 @@ export default function MediaUpload({ showId, onUploadComplete }: MediaUploadPro
 
   return (
     <div>
+      <select
+        value={category}
+        onChange={(e) => setCategory(e.target.value as MediaCategory)}
+        className="w-full mb-2 px-2 py-1.5 text-xs bg-od-surface border border-od-surface-light rounded text-white focus:outline-none focus:border-od-accent"
+      >
+        {CATEGORY_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
       <div
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}

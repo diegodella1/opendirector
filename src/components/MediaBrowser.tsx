@@ -1,12 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { MediaFile } from '@/lib/types';
 import MediaUpload from './MediaUpload';
 
-interface MediaBrowserProps {
-  showId: string;
-}
+const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
+  clip: { label: 'Clip', color: 'bg-blue-600/80' },
+  stinger: { label: 'Stinger', color: 'bg-yellow-600/80' },
+  graphic: { label: 'Graphic', color: 'bg-purple-600/80' },
+  lower_third: { label: 'Lower Third', color: 'bg-teal-600/80' },
+  audio: { label: 'Audio', color: 'bg-pink-600/80' },
+};
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -22,9 +26,14 @@ function formatDuration(sec: number | null): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+interface MediaBrowserProps {
+  showId: string;
+}
+
 export default function MediaBrowser({ showId }: MediaBrowserProps) {
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const fetchMedia = useCallback(async () => {
     const res = await fetch(`/api/shows/${showId}/media`);
@@ -37,6 +46,16 @@ export default function MediaBrowser({ showId }: MediaBrowserProps) {
   useEffect(() => {
     fetchMedia();
   }, [fetchMedia]);
+
+  const availableCategories = useMemo(() => {
+    const cats = new Set(media.map((m) => m.category).filter(Boolean));
+    return Array.from(cats) as string[];
+  }, [media]);
+
+  const filteredMedia = useMemo(() => {
+    if (!categoryFilter) return media;
+    return media.filter((m) => m.category === categoryFilter);
+  }, [media, categoryFilter]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this media file?')) return;
@@ -56,6 +75,38 @@ export default function MediaBrowser({ showId }: MediaBrowserProps) {
 
       <MediaUpload showId={showId} onUploadComplete={fetchMedia} />
 
+      {/* Category filter chips */}
+      {availableCategories.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          <button
+            onClick={() => setCategoryFilter(null)}
+            className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors ${
+              !categoryFilter
+                ? 'bg-od-accent text-white'
+                : 'bg-od-surface-light text-od-text-dim hover:text-white'
+            }`}
+          >
+            All
+          </button>
+          {availableCategories.map((cat) => {
+            const cfg = CATEGORY_CONFIG[cat];
+            return (
+              <button
+                key={cat}
+                onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)}
+                className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors ${
+                  categoryFilter === cat
+                    ? 'bg-od-accent text-white'
+                    : 'bg-od-surface-light text-od-text-dim hover:text-white'
+                }`}
+              >
+                {cfg?.label || cat}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {loading ? (
         <p className="text-od-text-dim text-sm mt-4">Loading media...</p>
       ) : media.length === 0 ? (
@@ -64,7 +115,7 @@ export default function MediaBrowser({ showId }: MediaBrowserProps) {
         </p>
       ) : (
         <div className="grid grid-cols-3 gap-3 mt-4">
-          {media.map((m) => (
+          {filteredMedia.map((m) => (
             <div
               key={m.id}
               className="bg-od-surface border border-od-surface-light rounded-lg overflow-hidden group"
@@ -84,6 +135,12 @@ export default function MediaBrowser({ showId }: MediaBrowserProps) {
                 ) : (
                   <span className="text-od-text-dim text-2xl">
                     {m.mime_type.startsWith('video') ? '🎬' : m.mime_type.startsWith('audio') ? '🔊' : '📄'}
+                  </span>
+                )}
+                {/* Category badge */}
+                {m.category && CATEGORY_CONFIG[m.category] && (
+                  <span className={`absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded font-medium text-white ${CATEGORY_CONFIG[m.category].color}`}>
+                    {CATEGORY_CONFIG[m.category].label}
                   </span>
                 )}
                 {/* Compatibility badge */}

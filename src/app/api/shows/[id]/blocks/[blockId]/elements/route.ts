@@ -53,6 +53,8 @@ export async function POST(
       style: body.style || 'standard',
       mode: body.mode || 'fullscreen',
       trigger_type: body.trigger_type || 'manual',
+      gt_template_id: body.gt_template_id || null,
+      gt_field_values: body.gt_field_values || null,
     })
     .select()
     .single();

@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Show, Block, Element } from '@/lib/types';
+import type { Show, Block, Element, GtTemplate } from '@/lib/types';
 
 interface BlockWithElements extends Block {
   elements: Element[];
@@ -17,6 +17,7 @@ interface RundownState {
   // Data
   show: Show | null;
   blocks: BlockWithElements[];
+  gtTemplates: GtTemplate[];
   selectedBlockId: string | null;
 
   // Undo/Redo
@@ -46,6 +47,7 @@ interface RundownState {
 export const useRundownStore = create<RundownState>((set, get) => ({
   show: null,
   blocks: [],
+  gtTemplates: [],
   selectedBlockId: null,
   redoStack: [],
   ws: null,
@@ -55,7 +57,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
     const res = await fetch(`/api/shows/${showId}/rundown`);
     if (!res.ok) return;
     const data = await res.json();
-    set({ show: data.show, blocks: data.blocks });
+    set({ show: data.show, blocks: data.blocks, gtTemplates: data.gt_templates || [] });
   },
 
   addBlock: async (showId, name) => {
@@ -340,6 +342,23 @@ export const useRundownStore = create<RundownState>((set, get) => ({
             }));
             break;
           }
+          case 'gt_template_created':
+            set((state) => ({
+              gtTemplates: [...state.gtTemplates, msg.payload.gt_template],
+            }));
+            break;
+          case 'gt_template_updated':
+            set((state) => ({
+              gtTemplates: state.gtTemplates.map((t) =>
+                t.id === msg.payload.gt_template.id ? msg.payload.gt_template : t
+              ),
+            }));
+            break;
+          case 'gt_template_deleted':
+            set((state) => ({
+              gtTemplates: state.gtTemplates.filter((t) => t.id !== msg.payload.templateId),
+            }));
+            break;
         }
       }
 

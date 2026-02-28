@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenDirector — Instrucciones</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e6;
+      line-height: 1.7;
+    }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .hero {
+      text-align: center;
+      padding: 60px 20px 40px;
+      border-bottom: 1px solid #1e1e2e;
+    }
+    .hero h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+    .hero h1 span { color: #60a5fa; }
+    .hero p {
+      margin-top: 12px;
+      font-size: 1.1rem;
+      color: #9898a6;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    section { margin-bottom: 48px; }
+    h2 {
+      font-size: 1.4rem;
+      color: #fff;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1e1e2e;
+    }
+    h3 {
+      font-size: 1.05rem;
+      color: #c0c0cc;
+      margin: 20px 0 8px;
+    }
+    p, li { color: #b0b0be; }
+    ul, ol { padding-left: 24px; margin: 8px 0; }
+    li { margin-bottom: 6px; }
+
+    .card {
+      background: #12121c;
+      border: 1px solid #1e1e2e;
+      border-radius: 10px;
+      padding: 24px;
+      margin: 16px 0;
+    }
+
+    .download-card {
+      background: linear-gradient(135deg, #1a1a2e 0%, #12121c 100%);
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      margin: 24px 0;
+    }
+    .download-card h3 {
+      color: #fff;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+    .download-card p {
+      color: #9898a6;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 32px;
+      background: #60a5fa;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #3b82f6; text-decoration: none; }
+
+    .diagram {
+      background: #0d0d14;
+      border: 1px solid #1e1e2e;
+      border-radius: 8px;
+      padding: 20px;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      color: #c0c0cc;
+      line-height: 1.8;
+      white-space: pre;
+    }
+    .diagram .hl { color: #60a5fa; }
+    .diagram .gr { color: #4ade80; }
+    .diagram .yl { color: #facc15; }
+    .diagram .dm { color: #6b6b7b; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid #1e1e2e;
+      font-size: 0.9rem;
+    }
+    th { color: #9898a6; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { color: #c0c0cc; }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .tag-blue { background: #1e3a5f; color: #60a5fa; }
+    .tag-green { background: #14532d; color: #4ade80; }
+    .tag-yellow { background: #422006; color: #facc15; }
+    .tag-purple { background: #3b0764; color: #c084fc; }
+
+    .steps { counter-reset: step; list-style: none; padding-left: 0; }
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding-left: 44px;
+      margin-bottom: 20px;
+    }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 28px;
+      height: 28px;
+      background: #1e1e2e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #60a5fa;
+    }
+    .steps li strong { color: #e0e0e6; }
+
+    code {
+      background: #1a1a2a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: #c084fc;
+    }
+
+    footer {
+      text-align: center;
+      padding: 32px 20px;
+      border-top: 1px solid #1e1e2e;
+      color: #6b6b7b;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Open<span>Director</span></h1>
+  <p>Sistema open-source de produccion de TV en vivo. Arma el rundown en la web, controla vMix desde cualquier lugar.</p>
+</div>
+
+<div class="container">
+
+  <!-- QUE ES -->
+  <section>
+    <h2>Que es OpenDirector</h2>
+    <p>OpenDirector tiene dos partes que trabajan juntas:</p>
+    <div class="card">
+      <table>
+        <tr>
+          <th>Componente</th>
+          <th>Que hace</th>
+          <th>Donde corre</th>
+        </tr>
+        <tr>
+          <td><strong>Webapp</strong> <span class="tag tag-blue">Browser</span></td>
+          <td>Editor de rundown, teleprompter, panel de Go Live</td>
+          <td>Cualquier browser (PC, tablet, celular)</td>
+        </tr>
+        <tr>
+          <td><strong>Automator</strong> <span class="tag tag-purple">Windows</span></td>
+          <td>Conecta al servidor y ejecuta comandos contra vMix</td>
+          <td>La misma PC donde corre vMix</td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ARQUITECTURA -->
+  <section>
+    <h2>Como se conecta todo</h2>
+    <div class="diagram"><span class="dm">Desde cualquier lugar:</span>
+
+  <span class="hl">[Productor]</span> ──HTTPS──&gt; <span class="gr">[Servidor]</span> ──WebSocket──&gt; <span class="yl">[Automator + vMix]</span>
+   <span class="dm">browser</span>          <span class="dm">director.diegodella.ar</span>           <span class="dm">PC del estudio</span>
+
+  <span class="hl">[Talento]</span>   ──HTTPS──&gt; <span class="gr">[Servidor]</span>
+   <span class="dm">prompter en browser</span>
+
+<span class="dm">El Automator habla con vMix por TCP local (127.0.0.1:8099).</span>
+<span class="dm">vMix nunca se expone a internet.</span></div>
+    <p style="margin-top: 12px;">El servidor es el hub central. Todos se conectan a el. El Automator es el unico que habla con vMix, y siempre lo hace por red local.</p>
+  </section>
+
+  <!-- ROLES -->
+  <section>
+    <h2>Roles del equipo</h2>
+
+    <h3><span class="tag tag-blue">Productor</span> &mdash; Arma y dirige el show</h3>
+    <ul>
+      <li>Crea el show, arma bloques (segmentos), agrega elements (clips, lower thirds, graficos)</li>
+      <li>Configura GT Templates para los lower thirds de vMix</li>
+      <li>Escribe el script del teleprompter por bloque</li>
+      <li>Sube archivos de media (videos, imagenes)</li>
+      <li>En vivo: ve el estado, edita textos de LT al vuelo, envia senales al talento</li>
+    </ul>
+
+    <h3><span class="tag tag-purple">Operador</span> &mdash; Ejecuta contra vMix</h3>
+    <ul>
+      <li>Instala el Automator en la PC con vMix</li>
+      <li>Conecta al servidor y selecciona el show</li>
+      <li>Ve el rundown con todos los bloques y elements</li>
+      <li>Aprieta CUE para ejecutar cada element &mdash; el Automator envia los comandos a vMix</li>
+      <li>La media se descarga automaticamente a la PC local</li>
+    </ul>
+
+    <h3><span class="tag tag-green">Talento</span> &mdash; Lee el teleprompter</h3>
+    <ul>
+      <li>Abre el link del prompter en un browser (puede ser tablet, celular, PC)</li>
+      <li>Ve el script del bloque actual con scroll automatico</li>
+      <li>Recibe senales del productor (countdown, wrap, stretch, go)</li>
+    </ul>
+  </section>
+
+  <!-- DOWNLOAD -->
+  <section>
+    <div class="download-card">
+      <h3>Descargar Automator para Windows</h3>
+      <p>Instala el Automator en la PC donde corre vMix.<br>Requiere Windows 10/11 (64-bit).</p>
+      <a href="https://github.com/diegodella1/opendirector/actions" class="btn">Descargar Automator (MSI)</a>
+      <p style="margin-top: 16px; font-size: 0.8rem; color: #6b6b7b;">
+        Ir a GitHub Actions &gt; ultimo build exitoso &gt; descargar el artifact <code>automator-*.msi</code>
+      </p>
+    </div>
+  </section>
+
+  <!-- SETUP OPERADOR -->
+  <section>
+    <h2>Setup del Operador (paso a paso)</h2>
+    <ol class="steps">
+      <li>
+        <strong>Instalar el Automator</strong><br>
+        Descargar el MSI desde GitHub Actions e instalarlo. Se instala como app de escritorio.
+      </li>
+      <li>
+        <strong>Preparar vMix</strong><br>
+        Asegurarse de que vMix este corriendo y que el API TCP este habilitado (Settings &gt; Web Controller &gt; habilitar).<br>
+        Crear los inputs GT Title que se van a usar (ej: <code>LT_STANDARD</code> con campos <code>Headline.Text</code> y <code>Description.Text</code>).
+      </li>
+      <li>
+        <strong>Abrir el Automator y conectar al servidor</strong><br>
+        Server URL: <code>https://director.diegodella.ar</code><br>
+        El Automator carga la lista de shows disponibles. Seleccionar el show.
+      </li>
+      <li>
+        <strong>Conectar a vMix</strong><br>
+        vMix Host: <code>127.0.0.1</code> (localhost, porque esta en la misma PC).<br>
+        vMix Port: <code>8099</code> (default de vMix).
+      </li>
+      <li>
+        <strong>Verificar media sync</strong><br>
+        Los archivos de media del show se descargan automaticamente a <code>C:\OpenDirector\Media</code>.<br>
+        El panel de Media Sync muestra el progreso. Verificar que todo este en "synced".
+      </li>
+      <li>
+        <strong>Operar el show</strong><br>
+        Navegar los bloques con los botones de Next/Prev.<br>
+        Hacer click en CUE para ejecutar cada element. Los lower thirds con GT Template se envian automaticamente (SetText + OverlayIn).
+      </li>
+    </ol>
+  </section>
+
+  <!-- GT TEMPLATES -->
+  <section>
+    <h2>GT Templates (Lower Thirds configurables)</h2>
+    <p>Los GT Templates conectan los lower thirds de la webapp con los GT Title inputs de vMix.</p>
+
+    <h3>Como funciona</h3>
+    <div class="card">
+      <ol>
+        <li>El <strong>productor</strong> crea un GT Template en la webapp (ej: "Nombre+Cargo")</li>
+        <li>Configura: Input Key de vMix (<code>LT_STANDARD</code>), numero de overlay, y los campos (ej: <code>Headline.Text</code> = "Nombre", <code>Description.Text</code> = "Cargo")</li>
+        <li>En cada bloque, agrega un element Lower Third y selecciona el GT Template</li>
+        <li>Escribe los valores (ej: Nombre = "Diego Della", Cargo = "Productor")</li>
+        <li>Cuando el operador hace CUE, el Automator envia a vMix:</li>
+      </ol>
+      <div class="diagram"><span class="dm">&gt;</span> FUNCTION SetText Input=<span class="hl">LT_STANDARD</span>&amp;SelectedName=<span class="gr">Headline.Text</span>&amp;Value=<span class="yl">Diego Della</span>
+<span class="dm">&gt;</span> FUNCTION SetText Input=<span class="hl">LT_STANDARD</span>&amp;SelectedName=<span class="gr">Description.Text</span>&amp;Value=<span class="yl">Productor</span>
+<span class="dm">&gt;</span> FUNCTION OverlayInput<span class="hl">2</span>In Input=<span class="hl">LT_STANDARD</span></div>
+    </div>
+
+    <h3>Requisitos en vMix</h3>
+    <ul>
+      <li>El input debe ser un <strong>GT Title</strong> (no un input comun)</li>
+      <li>El <strong>Key</strong> del input debe coincidir con el que se configuro en la webapp</li>
+      <li>Los <strong>nombres de campo</strong> deben ser exactos (ej: <code>Headline.Text</code>, no <code>headline</code>)</li>
+      <li>Para ver los nombres de campo: en vMix, click derecho en el input GT &gt; Title Editor &gt; ver los nombres de cada text block</li>
+    </ul>
+  </section>
+
+  <!-- URLS -->
+  <section>
+    <h2>URLs de acceso</h2>
+    <div class="card">
+      <table>
+        <tr>
+          <th>Que</th>
+          <th>URL</th>
+          <th>Quien la usa</th>
+        </tr>
+        <tr>
+          <td>Home / Shows</td>
+          <td><a href="/">director.diegodella.ar</a></td>
+          <td>Productor</td>
+        </tr>
+        <tr>
+          <td>Editor de show</td>
+          <td><code>/shows/{id}/edit</code></td>
+          <td>Productor</td>
+        </tr>
+        <tr>
+          <td>Go Live</td>
+          <td><code>/shows/{id}/live</code></td>
+          <td>Productor</td>
+        </tr>
+        <tr>
+          <td>Teleprompter</td>
+          <td><code>/shows/{id}/prompter</code></td>
+          <td>Talento</td>
+        </tr>
+        <tr>
+          <td>Esta pagina</td>
+          <td><a href="/instructions.html">/instructions.html</a></td>
+          <td>Todos</td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section>
+    <h2>Preguntas frecuentes</h2>
+
+    <h3>Necesito exponer vMix a internet?</h3>
+    <p>No. El Automator corre en la misma PC que vMix y se conecta por localhost. Solo el servidor web (Raspberry Pi) esta expuesto via Cloudflare Tunnel.</p>
+
+    <h3>Puedo tener el estudio en otro pais?</h3>
+    <p>Si. El productor puede estar en Argentina, el estudio con vMix en USA, y el talento en otro lugar. Todos se conectan al servidor por internet.</p>
+
+    <h3>Que pasa si se cae internet?</h3>
+    <p>El Automator tiene cache local del rundown. Puede seguir operando contra vMix sin conexion al servidor. Cuando vuelve internet, se re-sincroniza.</p>
+
+    <h3>Puedo usar multiples estilos de lower third?</h3>
+    <p>Si. Crea un GT Template por cada estilo. Cada uno apunta a un input GT diferente en vMix con sus propios campos.</p>
+
+    <h3>Como actualizo los textos en vivo?</h3>
+    <p>El productor puede editar los campos de texto de un lower third durante el show en vivo. El cambio se sincroniza por WebSocket. El proximo CUE del operador usa los valores nuevos.</p>
+  </section>
+
+</div>
+
+<footer>
+  OpenDirector &mdash; Open Source TV Production System<br>
+  <a href="https://github.com/diegodella1/opendirector">github.com/diegodella1/opendirector</a>
+</footer>
+
+</body>
+</html>
