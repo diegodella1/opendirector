@@ -20,8 +20,9 @@ async function logExecution(showId, msg) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) return;
 
+  const restUrl = process.env.POSTGREST_URL || `${supabaseUrl}/rest/v1`;
   try {
-    await fetch(`${supabaseUrl}/rest/v1/od_execution_log`, {
+    await fetch(`${restUrl}/od_execution_log`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

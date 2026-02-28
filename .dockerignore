@@ -1,0 +1,13 @@
+node_modules
+.next
+automator/
+.env.local
+.env
+.git
+.github
+.claude
+tasks/
+data/
+*.tsbuildinfo
+next-env.d.ts
+SPEC.md

@@ -1,7 +1,17 @@
-import { createClient } from '@supabase/supabase-js';
+import { PostgrestClient } from '@supabase/postgrest-js';
 
-// Server-side client with service_role key (full access, no RLS)
-export const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabaseUrl = process.env.SUPABASE_URL!;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+// POSTGREST_URL: direct PostgREST URL (Docker compose with PostgREST)
+// Falls back to SUPABASE_URL + /rest/v1 (Supabase gateway with Kong)
+const restUrl = process.env.POSTGREST_URL
+  || `${supabaseUrl.replace(/\/$/, '')}/rest/v1`;
+
+export const supabase = new PostgrestClient(restUrl, {
+  headers: {
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+  },
+  schema: 'public',
+});
