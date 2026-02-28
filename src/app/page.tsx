@@ -91,9 +91,20 @@ export default function HomePage() {
 
   return (
     <div className="max-w-4xl mx-auto p-8">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-white">OpenDirector</h1>
-        <p className="text-od-text-dim mt-1">Live TV production system</p>
+      <header className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white">OpenDirector</h1>
+          <p className="text-od-text-dim mt-1">Live TV production system</p>
+        </div>
+        <Link
+          href="/download"
+          className="flex items-center gap-2 px-4 py-2 bg-od-surface border border-od-surface-light text-od-text rounded-lg hover:border-od-accent/50 hover:text-white transition-colors text-sm"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Download Automator
+        </Link>
       </header>
 
       {/* New Show Form */}

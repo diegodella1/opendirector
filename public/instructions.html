@@ -1,184 +1,210 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenDirector — Instrucciones</title>
+  <title>OpenDirector — User Manual</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
       background: #0a0a0f;
-      color: #e0e0e6;
-      line-height: 1.7;
+      color: #c8c8d4;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
     }
     a { color: #60a5fa; text-decoration: none; }
     a:hover { text-decoration: underline; }
+    ::selection { background: #60a5fa33; }
 
+    /* Hero */
     .hero {
       text-align: center;
-      padding: 60px 20px 40px;
-      border-bottom: 1px solid #1e1e2e;
+      padding: 72px 24px 48px;
+      border-bottom: 1px solid #16162a;
+      background: radial-gradient(ellipse at 50% 120%, #0d1530 0%, #0a0a0f 70%);
     }
-    .hero h1 {
-      font-size: 2.4rem;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -0.5px;
-    }
+    .hero h1 { font-size: 2.6rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
     .hero h1 span { color: #60a5fa; }
-    .hero p {
-      margin-top: 12px;
-      font-size: 1.1rem;
-      color: #9898a6;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
+    .hero .subtitle {
+      margin-top: 12px; font-size: 1.1rem; color: #8888a0;
+      max-width: 620px; margin-left: auto; margin-right: auto;
+    }
+    .hero .version-badge {
+      display: inline-block; margin-top: 20px;
+      padding: 4px 14px; border-radius: 20px; font-size: 0.8rem;
+      background: #ffffff08; border: 1px solid #ffffff12; color: #8888a0;
     }
 
-    .container {
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 40px 24px 80px;
+    /* Layout */
+    .page-layout { display: flex; max-width: 1200px; margin: 0 auto; }
+    .sidebar {
+      width: 260px; flex-shrink: 0; padding: 32px 0 80px 24px;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+      border-right: 1px solid #16162a;
     }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 4px; }
+    .sidebar nav { font-size: 0.82rem; }
+    .sidebar .nav-group { margin-bottom: 20px; }
+    .sidebar .nav-label {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: #5a5a70; margin-bottom: 8px; padding-left: 12px;
+    }
+    .sidebar a {
+      display: block; padding: 5px 12px; color: #8888a0; border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .sidebar a:hover { color: #e0e0e6; background: #ffffff06; text-decoration: none; }
+    .content { flex: 1; min-width: 0; padding: 40px 48px 100px; }
 
-    section { margin-bottom: 48px; }
+    /* Sections */
+    section { margin-bottom: 56px; }
     h2 {
-      font-size: 1.4rem;
-      color: #fff;
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #1e1e2e;
+      font-size: 1.5rem; color: #fff; margin-bottom: 20px; padding-bottom: 10px;
+      border-bottom: 1px solid #16162a; font-weight: 600;
     }
     h3 {
-      font-size: 1.05rem;
-      color: #c0c0cc;
-      margin: 20px 0 8px;
+      font-size: 1.1rem; color: #e0e0e6; margin: 28px 0 10px; font-weight: 600;
     }
-    p, li { color: #b0b0be; }
-    ul, ol { padding-left: 24px; margin: 8px 0; }
+    h4 { font-size: 0.95rem; color: #c0c0cc; margin: 20px 0 8px; font-weight: 600; }
+    p { margin-bottom: 12px; }
+    ul, ol { padding-left: 24px; margin: 8px 0 16px; }
     li { margin-bottom: 6px; }
+    strong { color: #e0e0e6; }
+    em { color: #a0a0b4; font-style: italic; }
 
+    /* Cards */
     .card {
-      background: #12121c;
-      border: 1px solid #1e1e2e;
-      border-radius: 10px;
-      padding: 24px;
-      margin: 16px 0;
+      background: #10101c; border: 1px solid #1c1c30; border-radius: 10px;
+      padding: 24px; margin: 16px 0;
     }
+    .card-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0; }
+    .card-row .card { flex: 1; min-width: 240px; }
 
+    /* Callouts */
+    .callout {
+      border-radius: 8px; padding: 16px 20px; margin: 16px 0;
+      font-size: 0.9rem; display: flex; gap: 12px; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .callout-info { background: #0c1a30; border: 1px solid #1e3a5f; color: #93b8e8; }
+    .callout-warn { background: #1c1600; border: 1px solid #4a3800; color: #d4a848; }
+    .callout-danger { background: #1c0808; border: 1px solid #4a1818; color: #e07070; }
+    .callout-tip { background: #081c0c; border: 1px solid #184a28; color: #70c088; }
+
+    /* Download */
     .download-card {
-      background: linear-gradient(135deg, #1a1a2e 0%, #12121c 100%);
-      border: 1px solid #2a2a4a;
-      border-radius: 12px;
-      padding: 32px;
-      text-align: center;
-      margin: 24px 0;
+      background: linear-gradient(135deg, #101830 0%, #10101c 100%);
+      border: 1px solid #2a3050; border-radius: 12px;
+      padding: 36px; text-align: center; margin: 24px 0;
     }
-    .download-card h3 {
-      color: #fff;
-      font-size: 1.2rem;
-      margin-bottom: 12px;
-    }
-    .download-card p {
-      color: #9898a6;
-      margin-bottom: 20px;
-      font-size: 0.95rem;
-    }
+    .download-card h3 { color: #fff; font-size: 1.25rem; margin-bottom: 8px; }
+    .download-card p { color: #8888a0; margin-bottom: 20px; font-size: 0.95rem; }
     .btn {
-      display: inline-block;
-      padding: 12px 32px;
-      background: #60a5fa;
-      color: #fff;
-      font-weight: 600;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: background 0.2s;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 32px; background: #3b82f6; color: #fff;
+      font-weight: 600; border-radius: 8px; font-size: 1rem; transition: background 0.2s;
     }
-    .btn:hover { background: #3b82f6; text-decoration: none; }
+    .btn:hover { background: #2563eb; text-decoration: none; }
+    .btn svg { width: 18px; height: 18px; }
 
+    /* Diagram */
     .diagram {
-      background: #0d0d14;
-      border: 1px solid #1e1e2e;
-      border-radius: 8px;
-      padding: 20px;
-      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-      font-size: 0.85rem;
-      overflow-x: auto;
-      color: #c0c0cc;
-      line-height: 1.8;
-      white-space: pre;
+      background: #08080f; border: 1px solid #1c1c30; border-radius: 8px;
+      padding: 20px 24px; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.82rem; overflow-x: auto; color: #9898a6;
+      line-height: 1.9; white-space: pre;
     }
     .diagram .hl { color: #60a5fa; }
     .diagram .gr { color: #4ade80; }
     .diagram .yl { color: #facc15; }
-    .diagram .dm { color: #6b6b7b; }
+    .diagram .rd { color: #f87171; }
+    .diagram .dm { color: #5a5a70; }
+    .diagram .pp { color: #c084fc; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 12px 0;
-    }
-    th, td {
-      text-align: left;
-      padding: 10px 14px;
-      border-bottom: 1px solid #1e1e2e;
-      font-size: 0.9rem;
-    }
-    th { color: #9898a6; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
-    td { color: #c0c0cc; }
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #16162a; font-size: 0.88rem; }
+    th { color: #7878a0; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.6px; }
+    td { color: #b8b8c8; }
+    tr:hover td { background: #ffffff03; }
 
+    /* Tags */
     .tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
+      display: inline-block; padding: 2px 9px; border-radius: 4px;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3px;
     }
     .tag-blue { background: #1e3a5f; color: #60a5fa; }
     .tag-green { background: #14532d; color: #4ade80; }
     .tag-yellow { background: #422006; color: #facc15; }
     .tag-purple { background: #3b0764; color: #c084fc; }
+    .tag-red { background: #450a0a; color: #f87171; }
+    .tag-gray { background: #1c1c2c; color: #8888a0; }
 
+    /* Numbered Steps */
     .steps { counter-reset: step; list-style: none; padding-left: 0; }
     .steps li {
-      counter-increment: step;
-      position: relative;
-      padding-left: 44px;
-      margin-bottom: 20px;
+      counter-increment: step; position: relative;
+      padding-left: 48px; margin-bottom: 24px;
     }
     .steps li::before {
-      content: counter(step);
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 28px;
-      height: 28px;
-      background: #1e1e2e;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #60a5fa;
+      content: counter(step); position: absolute; left: 0; top: 1px;
+      width: 30px; height: 30px; background: #16162a; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 700; color: #60a5fa;
     }
-    .steps li strong { color: #e0e0e6; }
+    .steps li strong { color: #e0e0e6; display: block; margin-bottom: 4px; }
 
+    /* Code */
     code {
-      background: #1a1a2a;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.85em;
-      color: #c084fc;
+      background: #16162a; padding: 2px 7px; border-radius: 4px;
+      font-size: 0.83em; color: #c084fc;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    }
+    pre {
+      background: #08080f; border: 1px solid #1c1c30; border-radius: 8px;
+      padding: 16px 20px; overflow-x: auto; margin: 12px 0 16px;
+      font-size: 0.82rem; line-height: 1.7;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      color: #b0b0c0;
     }
 
+    /* Kbd */
+    kbd {
+      display: inline-block; padding: 2px 8px; background: #16162a;
+      border: 1px solid #2a2a3a; border-radius: 4px; font-size: 0.8em;
+      font-family: inherit; color: #e0e0e6; font-weight: 500;
+      box-shadow: 0 1px 0 #2a2a3a;
+    }
+
+    /* State diagram */
+    .state-flow {
+      display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap; margin: 12px 0 20px; font-size: 0.85rem;
+    }
+    .state-node {
+      padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.8rem;
+    }
+    .state-arrow { color: #5a5a70; font-size: 1.2rem; }
+
+    /* Footer */
     footer {
-      text-align: center;
-      padding: 32px 20px;
-      border-top: 1px solid #1e1e2e;
-      color: #6b6b7b;
-      font-size: 0.85rem;
+      text-align: center; padding: 40px 24px; border-top: 1px solid #16162a;
+      color: #5a5a70; font-size: 0.82rem;
+    }
+    footer a { color: #60a5fa; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .page-layout { flex-direction: column; }
+      .sidebar {
+        width: 100%; position: static; height: auto;
+        border-right: none; border-bottom: 1px solid #16162a;
+        padding: 20px 24px;
+      }
+      .content { padding: 24px; }
+      .card-row { flex-direction: column; }
     }
   </style>
 </head>
@@ -186,222 +212,1284 @@
 
 <div class="hero">
   <h1>Open<span>Director</span></h1>
-  <p>Sistema open-source de produccion de TV en vivo. Arma el rundown en la web, controla vMix desde cualquier lugar.</p>
+  <p class="subtitle">Open-source live TV production system. Build your rundown on the web, control vMix from anywhere.</p>
+  <span class="version-badge">User Manual &middot; v0.1</span>
 </div>
 
-<div class="container">
+<div class="page-layout">
 
-  <!-- QUE ES -->
-  <section>
-    <h2>Que es OpenDirector</h2>
-    <p>OpenDirector tiene dos partes que trabajan juntas:</p>
+<!-- SIDEBAR / TOC -->
+<aside class="sidebar">
+  <nav>
+    <div class="nav-group">
+      <div class="nav-label">Overview</div>
+      <a href="#overview">What is OpenDirector</a>
+      <a href="#architecture">System Architecture</a>
+      <a href="#roles">Team Roles</a>
+      <a href="#show-lifecycle">Show Lifecycle</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Getting Started</div>
+      <a href="#download">Download Automator</a>
+      <a href="#setup-producer">Producer Setup</a>
+      <a href="#setup-operator">Operator Setup</a>
+      <a href="#setup-talent">Talent / Prompter</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Operations Manual</div>
+      <a href="#building-rundown">Building a Rundown</a>
+      <a href="#elements">Element Types</a>
+      <a href="#gt-templates">GT Templates</a>
+      <a href="#media">Media Management</a>
+      <a href="#prompter-config">Prompter Configuration</a>
+      <a href="#go-live">Go Live Panel</a>
+      <a href="#execution">Execution &amp; Cue</a>
+      <a href="#signals">Signals to Talent</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Reference</div>
+      <a href="#show-config">Show Configuration</a>
+      <a href="#keyboard-shortcuts">Keyboard Shortcuts</a>
+      <a href="#vmix-commands">vMix Commands</a>
+      <a href="#offline-mode">Offline Mode</a>
+      <a href="#urls">Access URLs</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Testing &amp; Troubleshooting</div>
+      <a href="#pre-flight">Pre-Flight Checklist</a>
+      <a href="#rehearsal">Rehearsal Mode</a>
+      <a href="#test-procedures">Test Procedures</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+      <a href="#known-limitations">Known Limitations</a>
+    </div>
+  </nav>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="content">
+
+  <!-- ============================================================ -->
+  <!-- OVERVIEW -->
+  <!-- ============================================================ -->
+
+  <section id="overview">
+    <h2>What is OpenDirector</h2>
+    <p>OpenDirector is an open-source live TV production system designed as a replacement for CuEZ. It enables producers to build and manage show rundowns from any browser, while operators execute the show in real-time against <strong>vMix</strong>.</p>
+
+    <p>The system comprises two components that work together:</p>
+
     <div class="card">
       <table>
         <tr>
-          <th>Componente</th>
-          <th>Que hace</th>
-          <th>Donde corre</th>
+          <th>Component</th>
+          <th>Purpose</th>
+          <th>Runs On</th>
         </tr>
         <tr>
           <td><strong>Webapp</strong> <span class="tag tag-blue">Browser</span></td>
-          <td>Editor de rundown, teleprompter, panel de Go Live</td>
-          <td>Cualquier browser (PC, tablet, celular)</td>
+          <td>Rundown editor, teleprompter, Go Live production panel, media management</td>
+          <td>Any modern browser (desktop, tablet, mobile)</td>
         </tr>
         <tr>
           <td><strong>Automator</strong> <span class="tag tag-purple">Windows</span></td>
-          <td>Conecta al servidor y ejecuta comandos contra vMix</td>
-          <td>La misma PC donde corre vMix</td>
+          <td>Connects to the server, receives commands, and executes them against vMix via TCP</td>
+          <td>The same Windows PC running vMix</td>
         </tr>
+      </table>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">&#9432;</span>
+      <div>The server (Next.js on a Raspberry Pi or any host) acts as the central hub. All clients connect to it. vMix is <strong>never</strong> exposed to the internet &mdash; only the Automator talks to vMix, always over the local network.</div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <h2>System Architecture</h2>
+    <div class="diagram"><span class="dm">From anywhere (internet or LAN):</span>
+
+  <span class="hl">[Producer]</span> ──HTTPS/WSS──&gt; <span class="gr">[Server]</span> ──WebSocket──&gt; <span class="yl">[Automator]</span> ──TCP──&gt; <span class="rd">[vMix]</span>
+   <span class="dm">browser</span>                <span class="dm">Next.js</span>               <span class="dm">Tauri desktop app</span>      <span class="dm">127.0.0.1:8099</span>
+
+  <span class="hl">[Talent]</span>  ──HTTPS/WSS──&gt; <span class="gr">[Server]</span>
+   <span class="dm">prompter (browser)</span>
+
+  <span class="hl">[Go Live]</span> ──WSS──&gt; <span class="gr">[Server]</span> &lt;──WSS── <span class="yl">[Automator]</span>
+   <span class="dm">producer monitor</span>       <span class="dm">bidirectional state sync</span></div>
+
+    <h3>Communication Channels</h3>
+    <p>The WebSocket connection carries five prioritized channels:</p>
+    <div class="card">
+      <table>
+        <tr><th>Priority</th><th>Channel</th><th>Direction</th><th>Purpose</th></tr>
+        <tr>
+          <td><span class="tag tag-red">0 (highest)</span></td>
+          <td><strong>execution</strong></td>
+          <td>Server &harr; Automator</td>
+          <td>CUE, NEXT, STOP, RESET commands and ACKs</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-yellow">1</span></td>
+          <td><strong>signals</strong></td>
+          <td>Server &rarr; Prompter</td>
+          <td>Countdown, wrap, stretch, go, custom messages</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">2</span></td>
+          <td><strong>tally</strong></td>
+          <td>Automator &rarr; All</td>
+          <td>PGM/PVW state, overlays, recording, streaming</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-gray">3</span></td>
+          <td><strong>rundown</strong></td>
+          <td>Server &harr; Automator</td>
+          <td>Content sync (blocks, elements, edits)</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-gray">4</span></td>
+          <td><strong>prompter</strong></td>
+          <td>Host &harr; Displays</td>
+          <td>Scroll position, speed, auto-scroll state</td>
+        </tr>
+      </table>
+    </div>
+    <p>Higher-priority messages are never dropped or delayed. Lower-priority channels may discard stale data under back-pressure to ensure execution commands always get through.</p>
+  </section>
+
+  <!-- ROLES -->
+  <section id="roles">
+    <h2>Team Roles</h2>
+
+    <div class="card-row">
+      <div class="card">
+        <h4><span class="tag tag-blue">Producer</span></h4>
+        <p style="margin-top:10px;">The producer builds and directs the show:</p>
+        <ul>
+          <li>Creates shows, blocks (segments), and elements (clips, lower thirds, graphics)</li>
+          <li>Configures GT Templates for vMix lower third inputs</li>
+          <li>Writes teleprompter scripts per block</li>
+          <li>Uploads media assets (video, images, audio)</li>
+          <li>During the show: monitors execution, edits lower third text on-the-fly, sends signals to talent</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4><span class="tag tag-purple">Operator</span></h4>
+        <p style="margin-top:10px;">The operator runs the show against vMix:</p>
+        <ul>
+          <li>Installs the Automator on the vMix PC</li>
+          <li>Connects to the server and selects the show</li>
+          <li>Navigates blocks and CUEs each element</li>
+          <li>Media syncs automatically to the local machine</li>
+          <li>Can run in Rehearsal (dry run) or Live mode</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4><span class="tag tag-green">Talent</span></h4>
+        <p style="margin-top:10px;">The talent reads the teleprompter:</p>
+        <ul>
+          <li>Opens the prompter URL in any browser (tablet, phone, desktop)</li>
+          <li>Sees the current block's script with synchronized scroll</li>
+          <li>Receives visual signals from the producer (countdown, wrap, stretch, go)</li>
+          <li>Works offline if the server goes down</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOW LIFECYCLE -->
+  <section id="show-lifecycle">
+    <h2>Show Lifecycle</h2>
+    <p>Every show progresses through a defined state machine. This ensures an orderly workflow from preparation to archival.</p>
+
+    <div class="state-flow">
+      <span class="state-node" style="background:#2a2a3a;color:#9898a6;">Draft</span>
+      <span class="state-arrow">&rarr;</span>
+      <span class="state-node" style="background:#1e3a5f;color:#60a5fa;">Ready</span>
+      <span class="state-arrow">&rarr;</span>
+      <span class="state-node" style="background:#422006;color:#facc15;">Rehearsal</span>
+      <span class="state-arrow">&rarr;</span>
+      <span class="state-node" style="background:#450a0a;color:#f87171;">Live</span>
+      <span class="state-arrow">&rarr;</span>
+      <span class="state-node" style="background:#1c1c2c;color:#8888a0;">Archived</span>
+    </div>
+
+    <div class="card">
+      <table>
+        <tr><th>State</th><th>Description</th><th>Editing</th><th>Automator</th></tr>
+        <tr>
+          <td><span class="tag tag-gray">Draft</span></td>
+          <td>Initial state. Work in progress.</td>
+          <td>Full editing allowed</td>
+          <td>Cannot connect</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">Ready</span></td>
+          <td>Reviewed and prepared for rehearsal or broadcast.</td>
+          <td>Full editing allowed</td>
+          <td>Can connect</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-yellow">Rehearsal</span></td>
+          <td>Dry run. Automator executes everything but does <strong>not</strong> send commands to vMix. Timing is measured.</td>
+          <td>Limited editing</td>
+          <td>Dry-run execution</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-red">Live</span></td>
+          <td>On air. Real execution against vMix.</td>
+          <td>Text-only edits (lower thirds)</td>
+          <td>Real execution</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-gray">Archived</span></td>
+          <td>Completed show. Media remains on disk. Shows archived &gt;90 days: export &amp; delete suggested.</td>
+          <td>Read-only</td>
+          <td>Cannot connect</td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>Allowed Transitions</h3>
+    <div class="card">
+      <table>
+        <tr><th>From</th><th>To</th><th>Who Can Do It</th></tr>
+        <tr><td>Draft</td><td>Ready</td><td>Producer</td></tr>
+        <tr><td>Ready</td><td>Draft</td><td>Producer</td></tr>
+        <tr><td>Ready</td><td>Rehearsal</td><td>Producer, Operator</td></tr>
+        <tr><td>Ready</td><td>Live</td><td>Producer only</td></tr>
+        <tr><td>Rehearsal</td><td>Ready</td><td>Producer, Operator</td></tr>
+        <tr><td>Rehearsal</td><td>Live</td><td>Producer only</td></tr>
+        <tr><td>Live</td><td>Ready</td><td>Producer only</td></tr>
+        <tr><td>Ready</td><td>Archived</td><td>Producer</td></tr>
+        <tr><td>Archived</td><td>Ready</td><td>Producer</td></tr>
+      </table>
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">&#9888;</span>
+      <div>You cannot go directly from <strong>Live</strong> to <strong>Draft</strong> or <strong>Archived</strong>. Always transition through <strong>Ready</strong> first.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- GETTING STARTED -->
+  <!-- ============================================================ -->
+
+  <section id="download">
+    <h2>Download Automator</h2>
+    <div class="download-card">
+      <h3>OpenDirector Automator for Windows</h3>
+      <p>Install the Automator on the PC where vMix is running.<br>Requires Windows 10 or later (64-bit) and Microsoft Edge WebView2 Runtime.</p>
+      <a href="/download" class="btn">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Download Page
+      </a>
+      <p style="margin-top: 16px; font-size: 0.82rem; color: #5a5a70;">
+        The download page always serves the latest release from GitHub.<br>
+        For silent/unattended install: <code>msiexec /i OpenDirector-Automator_X.Y.Z_x64_en-US.msi /quiet</code>
+      </p>
+    </div>
+
+    <h3>System Requirements</h3>
+    <div class="card">
+      <table>
+        <tr><th>Requirement</th><th>Details</th></tr>
+        <tr><td>Operating System</td><td>Windows 10 21H2 or later (64-bit)</td></tr>
+        <tr><td>vMix</td><td>Any edition (Basic, HD, 4K, Pro) running on the same machine or accessible on the LAN</td></tr>
+        <tr><td>WebView2 Runtime</td><td>Included in Windows 10 21H2+. <a href="https://developer.microsoft.com/en-us/microsoft-edge/webview2/">Manual download</a> for older systems.</td></tr>
+        <tr><td>Network</td><td>Connection to the OpenDirector server (LAN or internet)</td></tr>
+        <tr><td>Disk Space</td><td>~50 MB for the app + space for cached media files</td></tr>
       </table>
     </div>
   </section>
 
-  <!-- ARQUITECTURA -->
-  <section>
-    <h2>Como se conecta todo</h2>
-    <div class="diagram"><span class="dm">Desde cualquier lugar:</span>
-
-  <span class="hl">[Productor]</span> ──HTTPS──&gt; <span class="gr">[Servidor]</span> ──WebSocket──&gt; <span class="yl">[Automator + vMix]</span>
-   <span class="dm">browser</span>          <span class="dm">director.diegodella.ar</span>           <span class="dm">PC del estudio</span>
-
-  <span class="hl">[Talento]</span>   ──HTTPS──&gt; <span class="gr">[Servidor]</span>
-   <span class="dm">prompter en browser</span>
-
-<span class="dm">El Automator habla con vMix por TCP local (127.0.0.1:8099).</span>
-<span class="dm">vMix nunca se expone a internet.</span></div>
-    <p style="margin-top: 12px;">El servidor es el hub central. Todos se conectan a el. El Automator es el unico que habla con vMix, y siempre lo hace por red local.</p>
-  </section>
-
-  <!-- ROLES -->
-  <section>
-    <h2>Roles del equipo</h2>
-
-    <h3><span class="tag tag-blue">Productor</span> &mdash; Arma y dirige el show</h3>
-    <ul>
-      <li>Crea el show, arma bloques (segmentos), agrega elements (clips, lower thirds, graficos)</li>
-      <li>Configura GT Templates para los lower thirds de vMix</li>
-      <li>Escribe el script del teleprompter por bloque</li>
-      <li>Sube archivos de media (videos, imagenes)</li>
-      <li>En vivo: ve el estado, edita textos de LT al vuelo, envia senales al talento</li>
-    </ul>
-
-    <h3><span class="tag tag-purple">Operador</span> &mdash; Ejecuta contra vMix</h3>
-    <ul>
-      <li>Instala el Automator en la PC con vMix</li>
-      <li>Conecta al servidor y selecciona el show</li>
-      <li>Ve el rundown con todos los bloques y elements</li>
-      <li>Aprieta CUE para ejecutar cada element &mdash; el Automator envia los comandos a vMix</li>
-      <li>La media se descarga automaticamente a la PC local</li>
-    </ul>
-
-    <h3><span class="tag tag-green">Talento</span> &mdash; Lee el teleprompter</h3>
-    <ul>
-      <li>Abre el link del prompter en un browser (puede ser tablet, celular, PC)</li>
-      <li>Ve el script del bloque actual con scroll automatico</li>
-      <li>Recibe senales del productor (countdown, wrap, stretch, go)</li>
-    </ul>
-  </section>
-
-  <!-- DOWNLOAD -->
-  <section>
-    <div class="download-card">
-      <h3>Descargar Automator para Windows</h3>
-      <p>Instala el Automator en la PC donde corre vMix.<br>Requiere Windows 10/11 (64-bit).</p>
-      <a href="https://github.com/diegodella1/opendirector/actions" class="btn">Descargar Automator (MSI)</a>
-      <p style="margin-top: 16px; font-size: 0.8rem; color: #6b6b7b;">
-        Ir a GitHub Actions &gt; ultimo build exitoso &gt; descargar el artifact <code>automator-*.msi</code>
-      </p>
-    </div>
-  </section>
-
-  <!-- SETUP OPERADOR -->
-  <section>
-    <h2>Setup del Operador (paso a paso)</h2>
+  <!-- SETUP: PRODUCER -->
+  <section id="setup-producer">
+    <h2>Producer Setup</h2>
+    <p>The producer works entirely in the browser. No software installation is required.</p>
     <ol class="steps">
       <li>
-        <strong>Instalar el Automator</strong><br>
-        Descargar el MSI desde GitHub Actions e instalarlo. Se instala como app de escritorio.
+        <strong>Open the webapp</strong>
+        Navigate to the server URL in any modern browser (Chrome, Firefox, Edge, Safari).
       </li>
       <li>
-        <strong>Preparar vMix</strong><br>
-        Asegurarse de que vMix este corriendo y que el API TCP este habilitado (Settings &gt; Web Controller &gt; habilitar).<br>
-        Crear los inputs GT Title que se van a usar (ej: <code>LT_STANDARD</code> con campos <code>Headline.Text</code> y <code>Description.Text</code>).
+        <strong>Create a show</strong>
+        Enter a name and click <strong>New Show</strong>. Optionally, select a template to start from a pre-built rundown structure.
       </li>
       <li>
-        <strong>Abrir el Automator y conectar al servidor</strong><br>
-        Server URL: <code>https://director.diegodella.ar</code><br>
-        El Automator carga la lista de shows disponibles. Seleccionar el show.
+        <strong>Build the rundown</strong>
+        Add blocks (segments), then populate each block with elements &mdash; clips, lower thirds, graphics, audio, and production notes. See <a href="#building-rundown">Building a Rundown</a>.
       </li>
       <li>
-        <strong>Conectar a vMix</strong><br>
-        vMix Host: <code>127.0.0.1</code> (localhost, porque esta en la misma PC).<br>
-        vMix Port: <code>8099</code> (default de vMix).
+        <strong>Configure GT Templates</strong>
+        Set up the mapping between your lower-third designs and vMix GT Title inputs. See <a href="#gt-templates">GT Templates</a>.
       </li>
       <li>
-        <strong>Verificar media sync</strong><br>
-        Los archivos de media del show se descargan automaticamente a <code>C:\OpenDirector\Media</code>.<br>
-        El panel de Media Sync muestra el progreso. Verificar que todo este en "synced".
+        <strong>Upload media</strong>
+        Drag and drop video, image, and audio files into the media pool. The system validates codecs and generates thumbnails automatically.
       </li>
       <li>
-        <strong>Operar el show</strong><br>
-        Navegar los bloques con los botones de Next/Prev.<br>
-        Hacer click en CUE para ejecutar cada element. Los lower thirds con GT Template se envian automaticamente (SetText + OverlayIn).
+        <strong>Write prompter scripts</strong>
+        Each block has a script field. Use markup conventions for pauses, cues, and formatting. See <a href="#prompter-config">Prompter Configuration</a>.
+      </li>
+      <li>
+        <strong>Set the show to Ready</strong>
+        Once the rundown is complete, transition the show from <strong>Draft</strong> to <strong>Ready</strong>. This allows the Automator to connect.
+      </li>
+      <li>
+        <strong>Go Live</strong>
+        Open the <strong>Go Live</strong> panel to monitor execution in real-time, send signals, and make text edits during the show.
       </li>
     </ol>
   </section>
 
-  <!-- GT TEMPLATES -->
-  <section>
-    <h2>GT Templates (Lower Thirds configurables)</h2>
-    <p>Los GT Templates conectan los lower thirds de la webapp con los GT Title inputs de vMix.</p>
+  <!-- SETUP: OPERATOR -->
+  <section id="setup-operator">
+    <h2>Operator Setup</h2>
+    <ol class="steps">
+      <li>
+        <strong>Install the Automator</strong>
+        Download the MSI from the <a href="/download">download page</a> and run the installer. The app installs as a standard Windows desktop application.
+      </li>
+      <li>
+        <strong>Prepare vMix</strong>
+        Ensure vMix is running and the TCP API is enabled:<br>
+        <em>vMix &rarr; Settings &rarr; Web Controller &rarr; Enable</em>.<br>
+        Create any GT Title inputs you will use (e.g., <code>LT_STANDARD</code> with fields <code>Headline.Text</code> and <code>Description.Text</code>).<br>
+        Create clip pool inputs named <code>CLIP_A</code> and <code>CLIP_B</code> (or whatever names are configured in the show).
+      </li>
+      <li>
+        <strong>Launch the Automator and connect to the server</strong>
+        Enter the Server URL (e.g., <code>https://your-server.com</code> or <code>http://192.168.1.14:3000</code>).<br>
+        The Automator loads the list of available shows. Select the target show.
+      </li>
+      <li>
+        <strong>Connect to vMix</strong>
+        Enter the vMix host and port:<br>
+        &bull; <strong>Host:</strong> <code>127.0.0.1</code> (localhost, since the Automator runs on the same PC as vMix)<br>
+        &bull; <strong>Port:</strong> <code>8099</code> (vMix default TCP API port)
+      </li>
+      <li>
+        <strong>Wait for media sync</strong>
+        Media files referenced in the show are automatically downloaded to the local machine (default: <code>C:\OpenDirector\Media</code>).<br>
+        The Media Sync panel shows per-file progress. Wait until all items show <strong>synced</strong>.<br>
+        Files are verified with SHA256 checksums. If a download is corrupted, it re-downloads automatically.
+      </li>
+      <li>
+        <strong>Run the pre-flight check</strong>
+        The Automator validates that all referenced vMix inputs exist and media is loaded. Review any warnings before proceeding. See <a href="#pre-flight">Pre-Flight Checklist</a>.
+      </li>
+      <li>
+        <strong>Operate the show</strong>
+        Navigate blocks with <kbd>Space</kbd> (next) / <kbd>Backspace</kbd> (prev).<br>
+        Press <kbd>Enter</kbd> to <strong>CUE</strong> the selected element &mdash; the Automator sends the corresponding commands to vMix.<br>
+        Use <kbd>F1</kbd>&ndash;<kbd>F8</kbd> for step buttons on multi-step elements.
+      </li>
+    </ol>
 
-    <h3>Como funciona</h3>
-    <div class="card">
-      <ol>
-        <li>El <strong>productor</strong> crea un GT Template en la webapp (ej: "Nombre+Cargo")</li>
-        <li>Configura: Input Key de vMix (<code>LT_STANDARD</code>), numero de overlay, y los campos (ej: <code>Headline.Text</code> = "Nombre", <code>Description.Text</code> = "Cargo")</li>
-        <li>En cada bloque, agrega un element Lower Third y selecciona el GT Template</li>
-        <li>Escribe los valores (ej: Nombre = "Diego Della", Cargo = "Productor")</li>
-        <li>Cuando el operador hace CUE, el Automator envia a vMix:</li>
-      </ol>
-      <div class="diagram"><span class="dm">&gt;</span> FUNCTION SetText Input=<span class="hl">LT_STANDARD</span>&amp;SelectedName=<span class="gr">Headline.Text</span>&amp;Value=<span class="yl">Diego Della</span>
-<span class="dm">&gt;</span> FUNCTION SetText Input=<span class="hl">LT_STANDARD</span>&amp;SelectedName=<span class="gr">Description.Text</span>&amp;Value=<span class="yl">Productor</span>
-<span class="dm">&gt;</span> FUNCTION OverlayInput<span class="hl">2</span>In Input=<span class="hl">LT_STANDARD</span></div>
+    <div class="callout callout-info">
+      <span class="callout-icon">&#9432;</span>
+      <div><strong>One Automator per show.</strong> The server enforces this. If another Automator is already connected to the show, you will see the existing connection's IP and be blocked. Exception: if the previous Automator disconnected less than 30 seconds ago, a reconnect is allowed.</div>
     </div>
-
-    <h3>Requisitos en vMix</h3>
-    <ul>
-      <li>El input debe ser un <strong>GT Title</strong> (no un input comun)</li>
-      <li>El <strong>Key</strong> del input debe coincidir con el que se configuro en la webapp</li>
-      <li>Los <strong>nombres de campo</strong> deben ser exactos (ej: <code>Headline.Text</code>, no <code>headline</code>)</li>
-      <li>Para ver los nombres de campo: en vMix, click derecho en el input GT &gt; Title Editor &gt; ver los nombres de cada text block</li>
-    </ul>
   </section>
 
-  <!-- URLS -->
-  <section>
-    <h2>URLs de acceso</h2>
+  <!-- SETUP: TALENT -->
+  <section id="setup-talent">
+    <h2>Talent / Prompter Setup</h2>
+    <ol class="steps">
+      <li>
+        <strong>Open the prompter link</strong>
+        The producer generates a prompter URL (with embedded session token) or QR code. Open it in any browser. The prompter works on tablets, phones, PCs, and dedicated prompter displays.
+      </li>
+      <li>
+        <strong>Go fullscreen</strong>
+        Tap/click to enter fullscreen mode. The prompter is a PWA with landscape orientation lock and Wake Lock (screen stays on).
+      </li>
+      <li>
+        <strong>Control scroll</strong>
+        Multiple control methods are available:<br>
+        &bull; <strong>Bluetooth foot pedal / remote keyboard</strong> &mdash; sends PageDown, Space, arrow keys<br>
+        &bull; <strong>Companion device</strong> &mdash; open <code>?mode=control</code> on a phone, <code>?mode=display</code> on the main screen<br>
+        &bull; <strong>Auto-scroll</strong> &mdash; configurable speed (0&ndash;100), tap to pause/resume<br>
+        &bull; <strong>Touch drag</strong> &mdash; direct drag on touchscreen
+      </li>
+      <li>
+        <strong>Watch for signals</strong>
+        The producer can send visual overlays: countdown timer, WRAP (red, flashing), STRETCH (blue), STANDBY (yellow), GO (green, 3 seconds), or custom text.
+      </li>
+    </ol>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">&#10003;</span>
+      <div><strong>Mirror mode:</strong> For glass prompters, enable mirror mode. The script text is flipped horizontally, but signal overlays remain readable (they are double-mirrored).</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- OPERATIONS MANUAL -->
+  <!-- ============================================================ -->
+
+  <section id="building-rundown">
+    <h2>Building a Rundown</h2>
+    <p>A rundown is the complete structure of a show, organized into <strong>blocks</strong> (segments) that contain <strong>elements</strong> (individual items to execute).</p>
+
+    <h3>Blocks</h3>
+    <p>Blocks are the top-level segments of your show (e.g., "Opening", "Interview", "Weather", "Closing"). Each block contains:</p>
     <div class="card">
       <table>
-        <tr>
-          <th>Que</th>
-          <th>URL</th>
-          <th>Quien la usa</th>
-        </tr>
-        <tr>
-          <td>Home / Shows</td>
-          <td><a href="/">director.diegodella.ar</a></td>
-          <td>Productor</td>
-        </tr>
-        <tr>
-          <td>Editor de show</td>
-          <td><code>/shows/{id}/edit</code></td>
-          <td>Productor</td>
-        </tr>
-        <tr>
-          <td>Go Live</td>
-          <td><code>/shows/{id}/live</code></td>
-          <td>Productor</td>
-        </tr>
-        <tr>
-          <td>Teleprompter</td>
-          <td><code>/shows/{id}/prompter</code></td>
-          <td>Talento</td>
-        </tr>
-        <tr>
-          <td>Esta pagina</td>
-          <td><a href="/instructions.html">/instructions.html</a></td>
-          <td>Todos</td>
-        </tr>
+        <tr><th>Property</th><th>Description</th></tr>
+        <tr><td><strong>Name</strong></td><td>Segment name visible in the rundown and Automator</td></tr>
+        <tr><td><strong>Estimated Duration</strong></td><td>Expected length in seconds. Used for timing calculations and overrun warnings.</td></tr>
+        <tr><td><strong>Cameras</strong></td><td>Array of camera names assigned to this segment (e.g., <code>["cam_diego", "cam_martin"]</code>)</td></tr>
+        <tr><td><strong>Script</strong></td><td>Teleprompter text for this segment (with markup)</td></tr>
+        <tr><td><strong>Notes</strong></td><td>Production notes (not visible on air or prompter)</td></tr>
+        <tr><td><strong>Status</strong></td><td><code>pending</code> &rarr; <code>on_air</code> &rarr; <code>done</code> (or <code>skipped</code>)</td></tr>
+      </table>
+    </div>
+
+    <p>Blocks can be reordered via drag-and-drop. The position is automatically maintained.</p>
+
+    <h3>Script Markup</h3>
+    <p>The teleprompter script supports these conventions:</p>
+    <div class="card">
+      <table>
+        <tr><th>Markup</th><th>Renders As</th></tr>
+        <tr><td><code>[PAUSE]</code></td><td>Visual pause indicator for the talent</td></tr>
+        <tr><td><code>[VTR: clip name]</code></td><td>Video tape roll cue</td></tr>
+        <tr><td><code>[CUT TO CAM X]</code></td><td>Camera cut note</td></tr>
+        <tr><td><code>[SOT]</code></td><td>Sound on tape</td></tr>
+        <tr><td><code>[VO]</code></td><td>Voice over</td></tr>
+        <tr><td><code>---</code></td><td>Visual separator</td></tr>
+        <tr><td><code>**text**</code></td><td><strong>Bold / emphasis</strong></td></tr>
+        <tr><td><code>(instruction)</code></td><td><span style="color:#5a5a70;">Grayed-out note (not read aloud)</span></td></tr>
       </table>
     </div>
   </section>
 
-  <!-- FAQ -->
-  <section>
-    <h2>Preguntas frecuentes</h2>
+  <!-- ELEMENTS -->
+  <section id="elements">
+    <h2>Element Types</h2>
+    <p>Elements are the individual items within a block that the Automator executes against vMix.</p>
 
-    <h3>Necesito exponer vMix a internet?</h3>
-    <p>No. El Automator corre en la misma PC que vMix y se conecta por localhost. Solo el servidor web (Raspberry Pi) esta expuesto via Cloudflare Tunnel.</p>
+    <div class="card">
+      <table>
+        <tr><th>Type</th><th>Description</th><th>Media</th><th>vMix Action</th></tr>
+        <tr>
+          <td><span class="tag tag-blue">Clip</span></td>
+          <td>Video clip (VT). Loaded into clip pool A/B alternating.</td>
+          <td>Required</td>
+          <td>AddInput, CutDirect/Fade, Play</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-green">Graphic</span></td>
+          <td>Image/graphic overlay. Assigned to the graphics overlay channel.</td>
+          <td>Required</td>
+          <td>OverlayInputIn/Out</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-yellow">Lower Third</span></td>
+          <td>Text lower third (line 1 + line 2). Uses GT Template mapping.</td>
+          <td>None</td>
+          <td>SetText + OverlayInputIn</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-purple">Audio</span></td>
+          <td>Standalone audio playback.</td>
+          <td>Required</td>
+          <td>AudioOn, Play</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-gray">Note</span></td>
+          <td>Production note. Not executed &mdash; reference only for the production team.</td>
+          <td>None</td>
+          <td>None</td>
+        </tr>
+      </table>
+    </div>
 
-    <h3>Puedo tener el estudio en otro pais?</h3>
-    <p>Si. El productor puede estar en Argentina, el estudio con vMix en USA, y el talento en otro lugar. Todos se conectan al servidor por internet.</p>
+    <h3>Element Properties</h3>
+    <div class="card">
+      <table>
+        <tr><th>Property</th><th>Description</th></tr>
+        <tr><td><strong>Title</strong></td><td>Primary text / line 1 / clip name</td></tr>
+        <tr><td><strong>Subtitle</strong></td><td>Secondary text / line 2</td></tr>
+        <tr><td><strong>Media</strong></td><td>Attached media file (for clips, graphics, audio)</td></tr>
+        <tr><td><strong>Duration</strong></td><td>Expected duration in seconds</td></tr>
+        <tr><td><strong>Style</strong></td><td><code>standard</code>, <code>breaking</code>, <code>data</code>, <code>highlight</code></td></tr>
+        <tr><td><strong>Mode</strong></td><td><code>fullscreen</code>, <code>overlay</code>, <code>pip</code></td></tr>
+        <tr><td><strong>Trigger Type</strong></td><td>How the element is activated (see below)</td></tr>
+      </table>
+    </div>
 
-    <h3>Que pasa si se cae internet?</h3>
-    <p>El Automator tiene cache local del rundown. Puede seguir operando contra vMix sin conexion al servidor. Cuando vuelve internet, se re-sincroniza.</p>
-
-    <h3>Puedo usar multiples estilos de lower third?</h3>
-    <p>Si. Crea un GT Template por cada estilo. Cada uno apunta a un input GT diferente en vMix con sus propios campos.</p>
-
-    <h3>Como actualizo los textos en vivo?</h3>
-    <p>El productor puede editar los campos de texto de un lower third durante el show en vivo. El cambio se sincroniza por WebSocket. El proximo CUE del operador usa los valores nuevos.</p>
+    <h3>Trigger Types</h3>
+    <div class="card">
+      <table>
+        <tr><th>Trigger</th><th>Behavior</th></tr>
+        <tr><td><code>manual</code></td><td>Operator explicitly activates it (default)</td></tr>
+        <tr><td><code>on_cue</code></td><td>Fires automatically when the element is CUE'd</td></tr>
+        <tr><td><code>on_block_start</code></td><td>Fires automatically when entering the block</td></tr>
+        <tr><td><code>timecode</code></td><td>Fires at a specific timecode offset (e.g., <code>-100ms</code> before end of clip)</td></tr>
+        <tr><td><code>on_keyword</code></td><td>Fires when the talent says a keyword from the script</td></tr>
+      </table>
+    </div>
   </section>
 
+  <!-- GT TEMPLATES -->
+  <section id="gt-templates">
+    <h2>GT Templates (Lower Third Configuration)</h2>
+    <p>GT Templates define how your lower thirds in the webapp map to GT Title inputs in vMix. This is the bridge between the rundown editor and vMix's graphics system.</p>
+
+    <h3>How It Works</h3>
+    <ol class="steps">
+      <li>
+        <strong>Create a GT Template in the webapp</strong>
+        Give it a descriptive name (e.g., "Standard Name+Title", "Breaking News", "Quote").
+      </li>
+      <li>
+        <strong>Configure the vMix mapping</strong>
+        Set the <strong>Input Key</strong> (the key name of the GT Title input in vMix, e.g., <code>LT_STANDARD</code>), the <strong>overlay number</strong> (which vMix overlay channel to use, typically 2), and define the <strong>fields</strong> (e.g., <code>Headline.Text</code> = "Name", <code>Description.Text</code> = "Title").
+      </li>
+      <li>
+        <strong>Add lower third elements to blocks</strong>
+        In each block, add a Lower Third element and select the GT Template. Fill in the text values for each field.
+      </li>
+      <li>
+        <strong>CUE in the Automator</strong>
+        When the operator presses CUE, the Automator sends the following commands to vMix:
+      </li>
+    </ol>
+
+    <div class="diagram"><span class="dm">&gt;</span> FUNCTION SetText Input=<span class="hl">LT_STANDARD</span>&amp;SelectedName=<span class="gr">Headline.Text</span>&amp;Value=<span class="yl">John Smith</span>
+<span class="dm">&gt;</span> FUNCTION SetText Input=<span class="hl">LT_STANDARD</span>&amp;SelectedName=<span class="gr">Description.Text</span>&amp;Value=<span class="yl">Senior Producer</span>
+<span class="dm">&gt;</span> FUNCTION OverlayInput<span class="pp">2</span>In Input=<span class="hl">LT_STANDARD</span></div>
+
+    <h3>vMix Requirements for GT Templates</h3>
+    <div class="callout callout-warn">
+      <span class="callout-icon">&#9888;</span>
+      <div>
+        <strong>Critical setup in vMix:</strong>
+        <ul style="margin-top:8px;">
+          <li>The input <strong>must</strong> be a <strong>GT Title</strong> (not a standard input or Title input)</li>
+          <li>The input <strong>Key</strong> must exactly match what is configured in the webapp (e.g., <code>LT_STANDARD</code>)</li>
+          <li>Field names must be <strong>exact</strong> (e.g., <code>Headline.Text</code>, not <code>headline</code> or <code>Headline</code>)</li>
+          <li>To find field names: right-click the GT input in vMix &rarr; <strong>Title Editor</strong> &rarr; inspect each text block's name</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Multiple Lower Third Styles</h3>
+    <p>Create one GT Template per visual style. Each template points to a different GT Title input in vMix with its own design, fields, and overlay channel. For example:</p>
+    <div class="card">
+      <table>
+        <tr><th>GT Template</th><th>vMix Input Key</th><th>Overlay</th><th>Fields</th></tr>
+        <tr><td>Standard</td><td><code>LT_STANDARD</code></td><td>2</td><td>Headline.Text, Description.Text</td></tr>
+        <tr><td>Breaking News</td><td><code>LT_BREAKING</code></td><td>2</td><td>Headline.Text</td></tr>
+        <tr><td>Quote</td><td><code>LT_QUOTE</code></td><td>2</td><td>Quote.Text, Attribution.Text</td></tr>
+        <tr><td>Data Graphic</td><td><code>GFX_DATA</code></td><td>1</td><td>Title.Text, Value.Text, Unit.Text</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- MEDIA -->
+  <section id="media">
+    <h2>Media Management</h2>
+
+    <h3>Upload (Producer &rarr; Server)</h3>
+    <p>Drag and drop files into the media pool in the editor. The server processes each file automatically:</p>
+    <ul>
+      <li><strong>Storage:</strong> saved as <code>data/shows/{show_id}/media/{uuid}.{ext}</code></li>
+      <li><strong>Thumbnail:</strong> generated via ffmpeg (first frame for video, resized for images)</li>
+      <li><strong>Metadata:</strong> duration, resolution, and codec extracted via ffprobe</li>
+      <li><strong>Checksum:</strong> SHA256 computed for integrity verification during sync</li>
+      <li><strong>Codec validation:</strong> ffprobe checks codec compatibility with vMix</li>
+    </ul>
+
+    <h3>vMix-Compatible Codecs</h3>
+    <div class="card">
+      <table>
+        <tr><th>Category</th><th>Safe Values</th></tr>
+        <tr><td>Video Codecs</td><td>H.264, H.265/HEVC, MPEG-2, ProRes, DNxHD</td></tr>
+        <tr><td>Containers</td><td>.mp4, .mov, .avi, .mxf, .mpg</td></tr>
+        <tr><td>Audio</td><td>AAC, MP3, WAV, PCM</td></tr>
+        <tr><td>Images</td><td>.jpg, .png, .bmp, .tga</td></tr>
+      </table>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">&#9432;</span>
+      <div>Incompatible codecs (e.g., VP9/WebM) generate a <strong>warning</strong> but do not block the upload. The warning reads: <em>"webm with codec vp9 may not work in vMix. Recommended: MP4 H.264/H.265."</em></div>
+    </div>
+
+    <h3>Download (Server &rarr; Automator)</h3>
+    <p>When the Automator connects, it automatically syncs all media referenced in the rundown:</p>
+    <ul>
+      <li>HTTP GET with <strong>Range headers</strong> (resumable downloads)</li>
+      <li>Up to <strong>3 concurrent</strong> downloads</li>
+      <li>SHA256 <strong>checksum verification</strong> after each download (auto-retry on mismatch)</li>
+      <li>Per-file <strong>progress bar</strong> in the Automator UI</li>
+      <li>Post-download: registers local path in SQLite, attempts to load as vMix input (<code>FUNCTION AddInput</code>)</li>
+    </ul>
+  </section>
+
+  <!-- PROMPTER CONFIG -->
+  <section id="prompter-config">
+    <h2>Prompter Configuration</h2>
+    <p>The prompter is fully configurable per show. Settings are accessible from the show editor.</p>
+
+    <div class="card">
+      <table>
+        <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+        <tr><td>Font Size</td><td>48 px</td><td>Teleprompter text size</td></tr>
+        <tr><td>Font Family</td><td>Arial</td><td>Typeface for the script</td></tr>
+        <tr><td>Line Height</td><td>1.5</td><td>Line spacing multiplier</td></tr>
+        <tr><td>Text Color</td><td>#FFFFFF</td><td>Script text color</td></tr>
+        <tr><td>Background Color</td><td>#000000</td><td>Prompter background</td></tr>
+        <tr><td>Mark Color</td><td>#FFFF00</td><td>Color for cue marks ([PAUSE], [VTR], etc.)</td></tr>
+        <tr><td>Past Text Opacity</td><td>30%</td><td>Opacity of already-read text</td></tr>
+        <tr><td>Side Margins</td><td>15%</td><td>Left/right padding percentage</td></tr>
+        <tr><td>Guide Line</td><td>Enabled</td><td>Horizontal guide line showing current read position</td></tr>
+        <tr><td>Guide Position</td><td>33%</td><td>Vertical position of guide line (1/3 from top)</td></tr>
+        <tr><td>Default Scroll Speed</td><td>60</td><td>Auto-scroll speed (0&ndash;100 scale)</td></tr>
+      </table>
+    </div>
+
+    <h3>Control Modes</h3>
+    <div class="card-row">
+      <div class="card">
+        <h4>Foot Pedal / Remote Keyboard</h4>
+        <p>A Bluetooth foot pedal or wireless keyboard sends keystrokes (PageDown, Space, arrows) to control scrolling. Ideal for camera-mounted prompters.</p>
+      </div>
+      <div class="card">
+        <h4>Companion Device</h4>
+        <p>Open <code>?mode=control</code> on a phone (the controller) and <code>?mode=display</code> on the main screen. The phone controls scroll, the display follows. If the controller disconnects for &gt;5 seconds, the display falls back to auto-scroll.</p>
+      </div>
+    </div>
+    <div class="card-row">
+      <div class="card">
+        <h4>Auto-Scroll</h4>
+        <p>Configurable speed (0&ndash;100). Tap the display to pause/resume. Server broadcasts position every 200ms; clients interpolate locally at 60fps for smooth rendering.</p>
+      </div>
+      <div class="card">
+        <h4>Touch Direct</h4>
+        <p>Drag directly on the touchscreen to scroll. Best for tablet setups at a news desk.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GO LIVE -->
+  <section id="go-live">
+    <h2>Go Live Panel</h2>
+    <p>The Go Live panel (<code>/shows/{id}/live</code>) is the producer's mission control during a live broadcast.</p>
+
+    <h3>Panel Layout</h3>
+    <div class="card">
+      <table>
+        <tr><th>Section</th><th>Location</th><th>Content</th></tr>
+        <tr>
+          <td><strong>Header</strong></td>
+          <td>Top</td>
+          <td>LIVE indicator, show name, clock, Automator/Prompter connection status, END SHOW button</td>
+        </tr>
+        <tr>
+          <td><strong>Rundown</strong></td>
+          <td>Left column</td>
+          <td>Block list with status icons (&#10003; done, &#9679; on air, &#9675; pending). Elements within each block. Overall show progress bar.</td>
+        </tr>
+        <tr>
+          <td><strong>Monitor</strong></td>
+          <td>Right column</td>
+          <td><strong>Tally:</strong> PGM (red) &amp; PVW (green) inputs, overlay status, recording/streaming state<br>
+            <strong>Timing:</strong> Block timer vs estimated, show timer vs estimated, progress %<br>
+            <strong>Execution Log:</strong> Real-time log of commands sent to vMix with timestamps and results</td>
+        </tr>
+        <tr>
+          <td><strong>Signals</strong></td>
+          <td>Bottom left</td>
+          <td>Buttons to send signals to talent: 30s countdown, WRAP, STRETCH, GO, custom message</td>
+        </tr>
+        <tr>
+          <td><strong>Script</strong></td>
+          <td>Bottom right</td>
+          <td>Current block's script (read-only view for reference)</td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>Error Visibility</h3>
+    <p>Errors from the Automator propagate to the Go Live panel via WebSocket:</p>
+    <ul>
+      <li><strong>Critical errors:</strong> Persistent red banner at the top + audible alert. Requires manual acknowledgment.</li>
+      <li><strong>Warnings:</strong> Yellow badge, auto-dismisses after 10 seconds.</li>
+    </ul>
+  </section>
+
+  <!-- EXECUTION -->
+  <section id="execution">
+    <h2>Execution &amp; Cue</h2>
+    <p>The execution engine in the Automator processes commands in a strict pipeline:</p>
+
+    <ol class="steps">
+      <li>
+        <strong>Command received</strong>
+        From local UI (keyboard/mouse) or remote via WebSocket.
+      </li>
+      <li>
+        <strong>Deduplication</strong>
+        Each command carries an <code>idempotencyKey</code> (UUID). Duplicate keys within 30 seconds are ignored.
+      </li>
+      <li>
+        <strong>Validation</strong>
+        Checks that the input exists in vMix, media is synced, and the show mode allows execution.
+      </li>
+      <li>
+        <strong>Variable resolution</strong>
+        Replaces template variables: <code>{{clip_pool}}</code> &rarr; current pool key, <code>{{media_path}}</code> &rarr; local file path, <code>{{title}}</code>/<code>{{subtitle}}</code> &rarr; element text.
+      </li>
+      <li>
+        <strong>Action chain execution</strong>
+        Runs the element's action chain in order, respecting delays between steps. A mutex ensures only one command executes at a time (5s timeout).
+      </li>
+      <li>
+        <strong>State update + notification</strong>
+        Updates local state, writes to the execution log, and sends ACK + state update via WebSocket.
+      </li>
+    </ol>
+
+    <h3>Action Phases</h3>
+    <div class="card">
+      <table>
+        <tr><th>Phase</th><th>When It Runs</th><th>UI</th></tr>
+        <tr><td><code>on_cue</code></td><td>Automatically when the element is CUE'd</td><td>No button needed</td></tr>
+        <tr><td><code>step</code></td><td>Manually triggered by operator</td><td>Visible button (PLAY, IN, OUT) with color and optional hotkey (F1&ndash;F8)</td></tr>
+        <tr><td><code>timecode</code></td><td>At a specific timecode offset</td><td>Auto-triggered</td></tr>
+        <tr><td><code>on_exit</code></td><td>When leaving the element</td><td>Auto-triggered</td></tr>
+      </table>
+    </div>
+
+    <h3>A/B Clip Pool Alternation</h3>
+    <p>The Automator alternates between two clip inputs (Pool A and Pool B) for seamless playback. While one clip plays on air, the next clip is pre-loaded into the inactive pool. This enables smooth transitions without loading delays.</p>
+
+    <h3>vMix TCP Connection Pool</h3>
+    <div class="card">
+      <table>
+        <tr><th>Connection</th><th>Functions</th><th>Priority</th></tr>
+        <tr><td>Conn 1: Transitions</td><td>CutDirect, Cut, Fade, FadeToBlack, Stinger</td><td>Highest</td></tr>
+        <tr><td>Conn 2: Graphics</td><td>SetText, SetImage, OverlayInput In/Out</td><td>High</td></tr>
+        <tr><td>Conn 3: Audio</td><td>AudioOn, AudioOff, SetVolume, SetBusVolume</td><td>Medium</td></tr>
+        <tr><td>Conn 4: State</td><td>SUBSCRIBE TALLY, SUBSCRIBE ACTS (read-only)</td><td>Monitoring</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- SIGNALS -->
+  <section id="signals">
+    <h2>Signals to Talent</h2>
+    <p>The producer sends visual signals to the prompter via the Go Live panel. Signals appear as semi-transparent overlays on the prompter screen.</p>
+
+    <div class="card">
+      <table>
+        <tr><th>Signal</th><th>Visual</th><th>Behavior</th></tr>
+        <tr><td><strong>Countdown</strong></td><td style="color:#facc15;">Yellow, counts down</td><td>Shows remaining seconds (e.g., "30 SECONDS"). Counts down in real time.</td></tr>
+        <tr><td><strong>Wrap</strong></td><td style="color:#f87171;">Red, flashing</td><td>Tells talent to wrap up immediately.</td></tr>
+        <tr><td><strong>Stretch</strong></td><td style="color:#60a5fa;">Blue</td><td>Tells talent to slow down / fill time.</td></tr>
+        <tr><td><strong>Standby</strong></td><td style="color:#facc15;">Yellow</td><td>Get ready, something is about to happen.</td></tr>
+        <tr><td><strong>Go</strong></td><td style="color:#4ade80;">Green, 3 seconds</td><td>Start now. Auto-dismisses after 3 seconds.</td></tr>
+        <tr><td><strong>Custom</strong></td><td style="color:#c084fc;">Purple</td><td>Free-text message from the producer.</td></tr>
+      </table>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">&#9432;</span>
+      <div>In mirror mode, signal overlays are double-mirrored so they remain readable to the talent looking at the glass prompter.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- REFERENCE -->
+  <!-- ============================================================ -->
+
+  <section id="show-config">
+    <h2>Show Configuration</h2>
+    <p>Each show has a configuration that controls how the Automator interacts with vMix.</p>
+
+    <div class="card">
+      <table>
+        <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+        <tr><td><code>vmix_host</code></td><td>127.0.0.1</td><td>IP address of the vMix instance</td></tr>
+        <tr><td><code>vmix_port</code></td><td>8099</td><td>vMix TCP API port</td></tr>
+        <tr><td><code>clip_pool_a_key</code></td><td>CLIP_A</td><td>vMix input key for clip pool A</td></tr>
+        <tr><td><code>clip_pool_b_key</code></td><td>CLIP_B</td><td>vMix input key for clip pool B</td></tr>
+        <tr><td><code>graphic_key</code></td><td>GFX</td><td>vMix input key for graphics</td></tr>
+        <tr><td><code>graphic_overlay</code></td><td>1</td><td>vMix overlay channel for graphics</td></tr>
+        <tr><td><code>lower_third_key</code></td><td>LT</td><td>vMix input key for lower thirds</td></tr>
+        <tr><td><code>lower_third_overlay</code></td><td>2</td><td>vMix overlay channel for lower thirds</td></tr>
+        <tr><td><code>action_delay_ms</code></td><td>40</td><td>Delay between chained actions (ms)</td></tr>
+        <tr><td><code>overrun_behavior</code></td><td>hold_last</td><td>What happens if the show exceeds estimated duration: <code>hold_last</code> (stay on last input) or <code>safe_input</code> (cut to safety)</td></tr>
+        <tr><td><code>overrun_safe_input_key</code></td><td>null</td><td>vMix input key for safe/standby content (logo, color bars)</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- KEYBOARD SHORTCUTS -->
+  <section id="keyboard-shortcuts">
+    <h2>Keyboard Shortcuts</h2>
+
+    <h3>Automator &mdash; Execution</h3>
+    <div class="card">
+      <table>
+        <tr><th>Key</th><th>Action</th></tr>
+        <tr><td><kbd>Enter</kbd></td><td>CUE selected element (fire on_cue + first step)</td></tr>
+        <tr><td><kbd>Space</kbd></td><td>NEXT block</td></tr>
+        <tr><td><kbd>Backspace</kbd></td><td>PREVIOUS block</td></tr>
+        <tr><td><kbd>F1</kbd> &ndash; <kbd>F8</kbd></td><td>Trigger step buttons (configurable per element)</td></tr>
+        <tr><td><kbd>Escape</kbd></td><td>STOP / cancel action chain in progress</td></tr>
+        <tr><td><kbd>F12</kbd></td><td>PANIC &mdash; cut to safe input (logo/color bars)</td></tr>
+        <tr><td><kbd>R</kbd></td><td>RESET show (requires confirmation)</td></tr>
+      </table>
+    </div>
+
+    <h3>Automator &mdash; Navigation</h3>
+    <div class="card">
+      <table>
+        <tr><th>Key</th><th>Action</th></tr>
+        <tr><td><kbd>Up</kbd> / <kbd>Down</kbd></td><td>Navigate elements within the current block</td></tr>
+        <tr><td><kbd>Tab</kbd></td><td>Next block</td></tr>
+        <tr><td><kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Previous block</td></tr>
+        <tr><td><kbd>Home</kbd></td><td>Jump to first block</td></tr>
+        <tr><td><kbd>End</kbd></td><td>Jump to last block</td></tr>
+      </table>
+    </div>
+
+    <h3>Automator &mdash; Audio &amp; Mode</h3>
+    <div class="card">
+      <table>
+        <tr><th>Key</th><th>Action</th></tr>
+        <tr><td><kbd>M</kbd></td><td>Mute/unmute current input</td></tr>
+        <tr><td><kbd>+</kbd> / <kbd>-</kbd></td><td>Volume up/down</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>R</kbd></td><td>Toggle Rehearsal / Live mode</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Open expanded execution log</td></tr>
+      </table>
+    </div>
+
+    <h3>Webapp Editor</h3>
+    <div class="card">
+      <table>
+        <tr><th>Key</th><th>Action</th></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Undo</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Redo</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- VMIX COMMANDS -->
+  <section id="vmix-commands">
+    <h2>vMix Commands Reference</h2>
+    <p>These are the vMix TCP API functions that the Automator can send. Each action in an element specifies one of these functions.</p>
+
+    <div class="card">
+      <table>
+        <tr><th>Category</th><th>Functions</th></tr>
+        <tr><td><strong>Transitions</strong></td><td><code>CutDirect</code>, <code>Cut</code>, <code>Fade</code>, <code>FadeToBlack</code>, <code>Stinger</code></td></tr>
+        <tr><td><strong>Text / Graphics</strong></td><td><code>SetText</code>, <code>SetImage</code></td></tr>
+        <tr><td><strong>Overlays</strong></td><td><code>OverlayInput1In</code>, <code>OverlayInput1Out</code>, <code>OverlayInput2In</code>, <code>OverlayInput2Out</code></td></tr>
+        <tr><td><strong>Playback</strong></td><td><code>Play</code>, <code>Pause</code>, <code>SetPosition</code></td></tr>
+        <tr><td><strong>Input Management</strong></td><td><code>ListAdd</code>, <code>ListRemoveAll</code>, <code>PreviewInput</code></td></tr>
+        <tr><td><strong>Audio</strong></td><td><code>AudioOn</code>, <code>AudioOff</code>, <code>SetVolume</code>, <code>SetBusVolume</code></td></tr>
+      </table>
+    </div>
+
+    <h3>Action Variables</h3>
+    <p>Action targets and values can use template variables that the Automator resolves at execution time:</p>
+    <div class="card">
+      <table>
+        <tr><th>Variable</th><th>Resolved To</th></tr>
+        <tr><td><code>{{clip_pool}}</code></td><td>Current clip pool input key (<code>CLIP_A</code> or <code>CLIP_B</code>, alternating)</td></tr>
+        <tr><td><code>{{media_path}}</code></td><td>Local filesystem path of the media file</td></tr>
+        <tr><td><code>{{title}}</code></td><td>Element's title / line 1</td></tr>
+        <tr><td><code>{{subtitle}}</code></td><td>Element's subtitle / line 2</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- OFFLINE MODE -->
+  <section id="offline-mode">
+    <h2>Offline Mode</h2>
+    <p>Both the Automator and the Prompter are designed to function when the server goes offline.</p>
+
+    <h3>Automator Offline</h3>
+    <ul>
+      <li>The complete rundown is cached in a local SQLite database</li>
+      <li>Execution continues normally against vMix using cached data</li>
+      <li>All actions are logged to a local event store</li>
+      <li>On reconnect, a reconciliation protocol merges state:
+        <ul>
+          <li><strong>Content:</strong> server wins (full sync if version changed)</li>
+          <li><strong>Execution state:</strong> Automator wins (the show continued offline)</li>
+          <li><strong>Execution log:</strong> merged, deduplicated by idempotencyKey</li>
+        </ul>
+      </li>
+      <li>Reconnect uses exponential backoff: 500ms &rarr; 1s &rarr; 2s &rarr; 4s &rarr; 8s &rarr; 15s max</li>
+    </ul>
+
+    <h3>Prompter Offline</h3>
+    <ul>
+      <li>All scripts are cached in IndexedDB on first load</li>
+      <li><strong>Still works:</strong> auto-scroll, foot pedal, keyboard, touch, block navigation, mirror mode, wake lock, fullscreen</li>
+      <li><strong>Does not work:</strong> companion device sync, signals from producer, live text edits, block sync from execution channel</li>
+      <li>Companion device disconnected &gt;5s: display automatically falls back to auto-scroll</li>
+      <li>Discrete yellow "OFFLINE" banner in the top corner</li>
+    </ul>
+  </section>
+
+  <!-- URLS -->
+  <section id="urls">
+    <h2>Access URLs</h2>
+    <div class="card">
+      <table>
+        <tr><th>Page</th><th>URL</th><th>Used By</th></tr>
+        <tr><td>Home / Shows</td><td><code>/</code></td><td>Producer</td></tr>
+        <tr><td>Show Editor</td><td><code>/shows/{id}/edit</code></td><td>Producer</td></tr>
+        <tr><td>Go Live Panel</td><td><code>/shows/{id}/live</code></td><td>Producer</td></tr>
+        <tr><td>Teleprompter</td><td><code>/shows/{id}/prompter</code></td><td>Talent</td></tr>
+        <tr><td>Automator Download</td><td><code>/download</code></td><td>Operator</td></tr>
+        <tr><td>This Manual</td><td><code>/instructions.html</code></td><td>Everyone</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- TESTING & TROUBLESHOOTING -->
+  <!-- ============================================================ -->
+
+  <section id="pre-flight">
+    <h2>Pre-Flight Checklist</h2>
+    <p>Run through this checklist before every show. The Automator performs automated checks, but manual verification is recommended.</p>
+
+    <h3>Server &amp; Network</h3>
+    <div class="card">
+      <table>
+        <tr><th style="width:40px;">&#9744;</th><th>Check</th><th>How to Verify</th></tr>
+        <tr><td>&#9744;</td><td>Server is running and accessible</td><td>Open the webapp in a browser. Confirm the shows list loads.</td></tr>
+        <tr><td>&#9744;</td><td>WebSocket connection is established</td><td>Automator status bar shows "Connected" (green).</td></tr>
+        <tr><td>&#9744;</td><td>Show is in <strong>Ready</strong> or <strong>Rehearsal</strong> state</td><td>Check the show status badge in the webapp.</td></tr>
+      </table>
+    </div>
+
+    <h3>vMix</h3>
+    <div class="card">
+      <table>
+        <tr><th style="width:40px;">&#9744;</th><th>Check</th><th>How to Verify</th></tr>
+        <tr><td>&#9744;</td><td>vMix is running</td><td>Confirm vMix window is open and responsive.</td></tr>
+        <tr><td>&#9744;</td><td>TCP API is enabled</td><td>vMix &rarr; Settings &rarr; Web Controller &rarr; Enabled.</td></tr>
+        <tr><td>&#9744;</td><td>Automator connects to vMix</td><td>Automator status shows "vMix: Connected".</td></tr>
+        <tr><td>&#9744;</td><td>Clip pool inputs exist</td><td>Verify <code>CLIP_A</code> and <code>CLIP_B</code> (or configured names) are present in vMix.</td></tr>
+        <tr><td>&#9744;</td><td>GT Title inputs exist with correct keys</td><td>For each GT Template, verify the vMix input exists with the matching Key name.</td></tr>
+        <tr><td>&#9744;</td><td>GT field names are exact</td><td>Right-click GT input &rarr; Title Editor &rarr; verify field names match the webapp config exactly.</td></tr>
+        <tr><td>&#9744;</td><td>Overlay channels are configured</td><td>Verify overlay numbers match (e.g., overlay 2 for lower thirds).</td></tr>
+      </table>
+    </div>
+
+    <h3>Media</h3>
+    <div class="card">
+      <table>
+        <tr><th style="width:40px;">&#9744;</th><th>Check</th><th>How to Verify</th></tr>
+        <tr><td>&#9744;</td><td>All media is synced</td><td>Automator Media Sync panel shows all items as "synced".</td></tr>
+        <tr><td>&#9744;</td><td>No codec warnings</td><td>Check for yellow codec warnings in the media pool. Re-encode if needed.</td></tr>
+        <tr><td>&#9744;</td><td>Media is loaded in vMix</td><td>Pre-flight validator confirms all media inputs exist in vMix.</td></tr>
+      </table>
+    </div>
+
+    <h3>Prompter</h3>
+    <div class="card">
+      <table>
+        <tr><th style="width:40px;">&#9744;</th><th>Check</th><th>How to Verify</th></tr>
+        <tr><td>&#9744;</td><td>Prompter displays open and connected</td><td>Go Live header shows "Prompter: Connected".</td></tr>
+        <tr><td>&#9744;</td><td>Scripts are correct and complete</td><td>Review each block's script in the editor or prompter.</td></tr>
+        <tr><td>&#9744;</td><td>Scroll speed is calibrated</td><td>Test auto-scroll speed during rehearsal. Adjust in prompter config.</td></tr>
+        <tr><td>&#9744;</td><td>Signals work</td><td>Send a test signal from Go Live, confirm it appears on the prompter.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- REHEARSAL -->
+  <section id="rehearsal">
+    <h2>Rehearsal Mode</h2>
+    <p>Rehearsal mode is a full dry run of your show. The Automator processes every command identically to Live mode, but <strong>does not send any commands to vMix</strong>.</p>
+
+    <h3>What Works in Rehearsal</h3>
+    <ul>
+      <li>CUE, NEXT, PREV, STOP, RESET &mdash; all commands are processed</li>
+      <li>Action chains execute (with delays) and timing is measured</li>
+      <li>Execution log records everything with type <code>rehearsal</code></li>
+      <li>Tally updates are simulated</li>
+      <li>Signals to talent work normally</li>
+      <li>Prompter syncs to block changes</li>
+    </ul>
+
+    <h3>What Doesn't Happen</h3>
+    <ul>
+      <li>No TCP commands are sent to vMix</li>
+      <li>vMix state does not change</li>
+      <li>No actual video/audio playback</li>
+    </ul>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">&#10003;</span>
+      <div><strong>Best practice:</strong> Always run at least one full rehearsal before going live. Use the timing data to calibrate block durations and identify issues with the rundown.</div>
+    </div>
+  </section>
+
+  <!-- TEST PROCEDURES -->
+  <section id="test-procedures">
+    <h2>Test Procedures</h2>
+    <p>Use these step-by-step procedures to validate each component of the system before a production.</p>
+
+    <h3>Test 1: End-to-End Connectivity</h3>
+    <div class="card">
+      <p><strong>Goal:</strong> Verify that all components can communicate.</p>
+      <ol>
+        <li>Open the webapp and create a test show with one block and one clip element.</li>
+        <li>Set the show to <strong>Ready</strong>.</li>
+        <li>Open the Automator and connect to the server. Verify the show appears in the list.</li>
+        <li>Connect the Automator to vMix. Verify "vMix: Connected" in the status bar.</li>
+        <li>Open the Go Live panel. Verify "Automator: Connected" in the header.</li>
+        <li>Open the prompter URL. Verify "Connected" state (no offline banner).</li>
+        <li><strong>Pass:</strong> All four components show connected status.</li>
+      </ol>
+    </div>
+
+    <h3>Test 2: Media Sync</h3>
+    <div class="card">
+      <p><strong>Goal:</strong> Verify media uploads and syncs to the Automator correctly.</p>
+      <ol>
+        <li>Upload a small test video (MP4 H.264, &lt;10 seconds) to the show's media pool.</li>
+        <li>Attach the video to a clip element in the rundown.</li>
+        <li>In the Automator, observe the Media Sync panel. The file should start downloading.</li>
+        <li>Wait for status to show "synced".</li>
+        <li>Verify the file appears in the local media folder (default: <code>C:\OpenDirector\Media</code>).</li>
+        <li>Verify the Automator attempted to load it as a vMix input.</li>
+        <li><strong>Pass:</strong> Media synced, checksum verified, input loaded in vMix.</li>
+      </ol>
+    </div>
+
+    <h3>Test 3: CUE Execution (Clip)</h3>
+    <div class="card">
+      <p><strong>Goal:</strong> Verify that CUE-ing a clip element sends the correct commands to vMix.</p>
+      <ol>
+        <li>Ensure a clip element with media is in the first block.</li>
+        <li>Set the show to <strong>Live</strong> (or use Rehearsal to skip vMix).</li>
+        <li>In the Automator, select the clip element and press <kbd>Enter</kbd> (CUE).</li>
+        <li>Observe the execution log &mdash; it should show the action chain (e.g., ListAdd, CutDirect, Play).</li>
+        <li>If in Live mode, verify vMix shows the clip on PGM.</li>
+        <li>Check Go Live panel &mdash; the execution log should mirror the Automator's log.</li>
+        <li><strong>Pass:</strong> Clip plays in vMix, execution log shows success on both ends.</li>
+      </ol>
+    </div>
+
+    <h3>Test 4: Lower Third with GT Template</h3>
+    <div class="card">
+      <p><strong>Goal:</strong> Verify GT Template lower thirds set text and activate overlay in vMix.</p>
+      <ol>
+        <li>Create a GT Template mapped to a GT Title input in vMix (e.g., <code>LT_STANDARD</code> with <code>Headline.Text</code> and <code>Description.Text</code>).</li>
+        <li>Add a Lower Third element to a block, select the GT Template, and fill in text values.</li>
+        <li>In the Automator (Live mode), CUE the lower third element.</li>
+        <li>Verify in vMix:
+          <ul>
+            <li>The GT Title input's text fields are updated with the correct values</li>
+            <li>The configured overlay channel activates with the input</li>
+          </ul>
+        </li>
+        <li><strong>Pass:</strong> Correct text appears in the lower third on vMix output.</li>
+      </ol>
+    </div>
+
+    <h3>Test 5: Prompter Signals</h3>
+    <div class="card">
+      <p><strong>Goal:</strong> Verify signals from the producer reach the prompter display.</p>
+      <ol>
+        <li>Open the Go Live panel and the prompter side by side (or on separate devices).</li>
+        <li>Click <strong>30s Countdown</strong> in the Signals section.</li>
+        <li>Verify the prompter shows a yellow "30 SECONDS" overlay that counts down.</li>
+        <li>Click <strong>WRAP</strong>. Verify the prompter shows a red flashing "WRAP" overlay.</li>
+        <li>Click <strong>Clear</strong>. Verify the overlay disappears.</li>
+        <li>Send a custom message. Verify it appears as typed.</li>
+        <li><strong>Pass:</strong> All signal types appear correctly on the prompter.</li>
+      </ol>
+    </div>
+
+    <h3>Test 6: Block Navigation &amp; Timing</h3>
+    <div class="card">
+      <p><strong>Goal:</strong> Verify block progression and timing in Rehearsal mode.</p>
+      <ol>
+        <li>Create a show with 3 blocks, each with estimated durations.</li>
+        <li>Set the show to <strong>Rehearsal</strong>.</li>
+        <li>In the Automator, press <kbd>Space</kbd> to advance through blocks.</li>
+        <li>Verify Go Live shows the correct block highlighted as "on air".</li>
+        <li>Verify the block timer counts up and compares against the estimated duration.</li>
+        <li>Verify the prompter advances to each block's script.</li>
+        <li>Complete all blocks. Verify the show progress bar reaches 100%.</li>
+        <li><strong>Pass:</strong> Smooth block progression, accurate timing, prompter syncs.</li>
+      </ol>
+    </div>
+
+    <h3>Test 7: Offline Resilience</h3>
+    <div class="card">
+      <p><strong>Goal:</strong> Verify the Automator continues operating if the server goes down.</p>
+      <ol>
+        <li>Connect the Automator to a show and sync all media.</li>
+        <li>Disconnect the server (stop the Next.js process or disconnect the network).</li>
+        <li>In the Automator, verify it shows "Reconnecting..." status.</li>
+        <li>CUE elements and navigate blocks. Verify vMix receives commands normally.</li>
+        <li>Restart the server. Verify the Automator reconnects and reconciles state.</li>
+        <li><strong>Pass:</strong> Uninterrupted operation during server outage, clean reconnection.</li>
+      </ol>
+    </div>
+
+    <h3>Test 8: Panic / Emergency</h3>
+    <div class="card">
+      <p><strong>Goal:</strong> Verify the PANIC button cuts to a safe input immediately.</p>
+      <ol>
+        <li>Configure <code>overrun_safe_input_key</code> in the show config (e.g., a logo or color bars input in vMix).</li>
+        <li>During live execution, press <kbd>F12</kbd> (PANIC).</li>
+        <li>Verify vMix immediately cuts to the safe input.</li>
+        <li>Verify the Go Live panel shows the emergency action in the execution log.</li>
+        <li><strong>Pass:</strong> Instant cut to safe content, logged in execution log.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- TROUBLESHOOTING -->
+  <section id="troubleshooting">
+    <h2>Troubleshooting</h2>
+
+    <h3>Automator cannot connect to the server</h3>
+    <div class="card">
+      <ul>
+        <li>Verify the server URL is correct and accessible from the vMix PC (try opening it in a browser).</li>
+        <li>Check firewall rules &mdash; the server port (default 3000) must be accessible.</li>
+        <li>If using HTTPS, verify the SSL certificate is valid.</li>
+        <li>Ensure the show is in <strong>Ready</strong>, <strong>Rehearsal</strong>, or <strong>Live</strong> state (cannot connect to Draft or Archived shows).</li>
+      </ul>
+    </div>
+
+    <h3>Automator cannot connect to vMix</h3>
+    <div class="card">
+      <ul>
+        <li>Verify vMix is running on the specified host.</li>
+        <li>Check that the TCP API is enabled: vMix &rarr; Settings &rarr; Web Controller &rarr; Enable.</li>
+        <li>Default port is <code>8099</code>. If changed in vMix, update the show config.</li>
+        <li>If connecting remotely (not localhost), check Windows Firewall allows inbound on port 8099.</li>
+        <li>The Automator reconnects automatically with backoff (1s, 2s, 4s, 8s max). Wait for it.</li>
+      </ul>
+    </div>
+
+    <h3>"AUTOMATOR_ALREADY_CONNECTED" error</h3>
+    <div class="card">
+      <ul>
+        <li>Only one Automator can connect to a show at a time.</li>
+        <li>If the previous Automator crashed, wait 30 seconds for the server to detect the stale connection.</li>
+        <li>The error message includes the IP of the existing Automator.</li>
+      </ul>
+    </div>
+
+    <h3>Lower third text doesn't update in vMix</h3>
+    <div class="card">
+      <ul>
+        <li>Verify the input is a <strong>GT Title</strong>, not a regular Title or other input type.</li>
+        <li>Verify the input <strong>Key</strong> in vMix matches exactly (case-sensitive).</li>
+        <li>Verify field names are exact: <code>Headline.Text</code> not <code>headline</code>. Check in vMix Title Editor.</li>
+        <li>Check the Automator execution log for SetText errors.</li>
+      </ul>
+    </div>
+
+    <h3>Media won't sync or shows error</h3>
+    <div class="card">
+      <ul>
+        <li><strong>Checksum mismatch:</strong> The file re-downloads automatically. If it persists, re-upload the file on the server.</li>
+        <li><strong>Codec warning:</strong> The file uploaded but may not play in vMix. Re-encode to MP4 H.264.</li>
+        <li><strong>Download stuck:</strong> Check network connectivity. The Automator resumes downloads with Range headers.</li>
+        <li><strong>vMix won't load the input:</strong> The file may be corrupted or in an unsupported format. Test by manually adding it as an input in vMix.</li>
+      </ul>
+    </div>
+
+    <h3>Prompter is out of sync</h3>
+    <div class="card">
+      <ul>
+        <li>Verify the prompter is connected (no yellow "OFFLINE" banner).</li>
+        <li>If using companion device mode, ensure the controller device is on the same network.</li>
+        <li>The server sends scroll position every 200ms. Clients interpolate at 60fps. Minor visual lag (&lt;200ms) is normal.</li>
+        <li>Try refreshing the prompter browser tab.</li>
+      </ul>
+    </div>
+
+    <h3>Optimistic locking conflict (409 error)</h3>
+    <div class="card">
+      <ul>
+        <li>This occurs when two editors modify the same block/element simultaneously.</li>
+        <li>The webapp automatically re-fetches the latest version and shows a toast: <em>"This block was edited. Reloading..."</em></li>
+        <li>Your changes may be lost. Re-apply them after the reload.</li>
+        <li>In practice, this is rare since shows typically have one producer editing at a time.</li>
+      </ul>
+    </div>
+
+    <h3>vMix command errors during live show</h3>
+    <div class="card">
+      <ul>
+        <li>Errors appear on the element with a red background and tooltip showing the error detail.</li>
+        <li>Use <strong>[RETRY]</strong> to re-attempt the command or <strong>[SKIP]</strong> to move on.</li>
+        <li>Critical errors propagate to the Go Live panel as a red banner with an audible alert.</li>
+        <li>Press <kbd>F12</kbd> (PANIC) to immediately cut to a safe input if needed.</li>
+        <li>Check the execution log in both the Automator (<kbd>Ctrl</kbd>+<kbd>L</kbd>) and Go Live panel for details.</li>
+      </ul>
+    </div>
+
+    <h3>WebSocket disconnections</h3>
+    <div class="card">
+      <ul>
+        <li>Heartbeat: ping every 3 seconds. If 2 pings go unanswered (6 seconds), the connection is considered lost.</li>
+        <li>Reconnect is automatic with exponential backoff: 500ms &rarr; 1s &rarr; 2s &rarr; 4s &rarr; 8s &rarr; 15s max.</li>
+        <li>After reconnect, the Automator runs the reconciliation protocol (content from server, execution state from Automator).</li>
+        <li>Rate limit: 10 messages/second per connection. Exceeding this may cause disconnection.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- KNOWN LIMITATIONS -->
+  <section id="known-limitations">
+    <h2>Known Limitations (v0.1)</h2>
+    <div class="card">
+      <table>
+        <tr><th>Limitation</th><th>Details</th></tr>
+        <tr><td>Single-server architecture</td><td>One server instance, multiple clients. No clustering or HA.</td></tr>
+        <tr><td>One Automator per show</td><td>Enforced by the server. Cannot have multiple operators on the same show.</td></tr>
+        <tr><td>Automator: Windows only</td><td>vMix only runs on Windows, so the Automator targets Windows exclusively.</td></tr>
+        <tr><td>No automatic conflict merge</td><td>Optimistic locking detects conflicts but does not auto-merge. Last writer wins after reload.</td></tr>
+        <tr><td>No media transcoding</td><td>Server validates and warns about codec compatibility but does not transcode files.</td></tr>
+        <tr><td>No audio meters</td><td>Audio level monitoring is not implemented. Use vMix's built-in meters.</td></tr>
+        <tr><td>No NDI awareness</td><td>NDI sources are managed directly in vMix, not through OpenDirector.</td></tr>
+        <tr><td>No physical tally lights</td><td>Tally is displayed in software only (Automator + Go Live panel).</td></tr>
+        <tr><td>No SMPTE timecode</td><td>Timecode triggers use internal clip position, not external SMPTE.</td></tr>
+        <tr><td>Prompter offline limitations</td><td>Companion device sync and producer signals do not work offline.</td></tr>
+        <tr><td>No auto-update (yet)</td><td>Automator checks for updates but does not auto-install them.</td></tr>
+      </table>
+    </div>
+  </section>
+
+</main>
 </div>
 
 <footer>
-  OpenDirector &mdash; Open Source TV Production System<br>
-  <a href="https://github.com/diegodella1/opendirector">github.com/diegodella1/opendirector</a>
+  <p><strong>OpenDirector</strong> &mdash; Open-Source Live TV Production System</p>
+  <p style="margin-top:8px;">
+    <a href="https://github.com/diegodella1/opendirector">GitHub Repository</a>
+    &nbsp;&middot;&nbsp;
+    <a href="/">Back to App</a>
+    &nbsp;&middot;&nbsp;
+    <a href="/download">Download Automator</a>
+  </p>
+  <p style="margin-top:12px; color: #3a3a4a;">Licensed under MIT</p>
 </footer>
 
 </body>

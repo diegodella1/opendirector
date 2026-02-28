@@ -47,12 +47,39 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Read version from tauri.conf.json
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(jq -r '.version' automator/src-tauri/tauri.conf.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=automator-v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Automator v${{ steps.version.outputs.version }}
+          body: |
+            ## OpenDirector Automator v${{ steps.version.outputs.version }}
+
+            Built from commit `${{ github.sha }}`.
+
+            ### Install
+            Download the `.msi` file below and run the installer.
+
+            **Silent install:** `msiexec /i OpenDirector-Automator_${{ steps.version.outputs.version }}_x64_en-US.msi /quiet`
+          files: automator/src-tauri/target/release/bundle/msi/*.msi
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Summary
         shell: bash
         run: |
-          echo "## Automator MSI Built" >> $GITHUB_STEP_SUMMARY
+          echo "## Automator MSI Built & Released" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** \`${GITHUB_SHA::7}\` — $(git log -1 --pretty=%s)" >> $GITHUB_STEP_SUMMARY
+          echo "**Release:** [${{ steps.version.outputs.tag }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }})" >> $GITHUB_STEP_SUMMARY
           echo "**Artifact:** \`automator-${GITHUB_SHA}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Download from the **Artifacts** section at the bottom of this workflow run." >> $GITHUB_STEP_SUMMARY
