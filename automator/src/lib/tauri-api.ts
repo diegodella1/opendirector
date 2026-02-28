@@ -85,13 +85,34 @@ export function connectWebSocket(serverUrl: string, showId: string) {
 }
 
 // Execute CUE against vMix (Tauri: via Rust, browser: mock)
+// Actions use Rust engine format: vmix_input + vmix_params (not target/field/value)
 export async function executeCue(
   elementId: string,
-  actions: { vmix_function: string; target: string | null; field: string | null; value: string | null; delay_ms: number }[]
+  actions: Array<{
+    id?: string;
+    phase?: string;
+    vmix_function: string;
+    vmix_input?: string | null;
+    vmix_params?: Record<string, string> | null;
+    delay_ms?: number;
+  }>,
+  config?: {
+    clip_pool_a_key?: string | null;
+    clip_pool_b_key?: string | null;
+    gfx_pool_key?: string | null;
+    dsk_key?: string | null;
+    stinger_index?: number | null;
+  } | null
 ): Promise<{ ok: boolean; latencyMs: number }> {
   const invoke = await getInvoke();
   if (invoke) {
-    return invoke('execute_cue', { elementId, actions }) as Promise<{ ok: boolean; latencyMs: number }>;
+    return invoke('execute_cue', {
+      args: {
+        element_id: elementId,
+        actions,
+        config: config || {},
+      },
+    }) as Promise<{ ok: boolean; latencyMs: number }>;
   }
   // Mock: simulate execution
   console.log(`[MOCK] CUE element ${elementId}:`, actions.map(a => a.vmix_function).join(' → '));

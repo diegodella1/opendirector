@@ -7,6 +7,7 @@ import { RundownPanel } from '@/components/RundownPanel';
 import { TallyPanel } from '@/components/TallyPanel';
 import { ExecutionLog } from '@/components/ExecutionLog';
 import { ControlBar } from '@/components/ControlBar';
+import { MediaSyncPanel } from '@/components/MediaSyncPanel';
 
 export default function App() {
   const { show, blocks, currentBlockIdx, selectedElementId, cueElement, executeStep, nextBlock, prevBlock, selectElement } = useAutomatorStore();
@@ -123,8 +124,11 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen bg-od-bg">
       <StatusBar />
-      <div className="flex-1 overflow-hidden">
-        <RundownPanel />
+      <div className="flex-1 overflow-hidden flex">
+        <div className="flex-1 overflow-hidden">
+          <RundownPanel />
+        </div>
+        <MediaSyncPanel />
       </div>
       <div className="flex border-t border-od-surface-light" style={{ height: '180px' }}>
         <TallyPanel />

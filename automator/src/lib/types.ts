@@ -44,6 +44,8 @@ export interface Element {
   mode: string;
   trigger_type: string;
   vmix_input_key: string | null;
+  gt_template_id: string | null;
+  gt_field_values: Record<string, string> | null;
   sync_status: string;
   status: string;
 }
@@ -65,10 +67,30 @@ export interface Action {
 
 export type ElementWithActions = Element & { actions: Action[] };
 
+// GT Template field definition
+export interface GtTemplateField {
+  name: string;    // vMix field name, e.g. "Headline.Text"
+  label: string;   // UI label, e.g. "Nombre"
+  default?: string;
+}
+
+// GT Template
+export interface GtTemplate {
+  id: string;
+  show_id: string;
+  name: string;
+  vmix_input_key: string;
+  overlay_number: number;
+  fields: GtTemplateField[];
+  position: number;
+  created_at: string;
+}
+
 export interface RundownFull {
   show: Show;
   config: ShowConfig | null;
   blocks: Block[];
+  gt_templates: GtTemplate[];
 }
 
 export interface TallyState {
@@ -91,6 +113,7 @@ export interface MediaSyncState {
   id: string;
   original_name: string;
   size_bytes: number;
+  category?: string;
   status: 'pending' | 'downloading' | 'synced' | 'error';
   progress?: number;        // 0-1
   local_path?: string;

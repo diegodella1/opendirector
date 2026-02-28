@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Show, ShowConfig, Block, LogEntry, TallyState, Action, MediaSyncState } from '@/lib/types';
+import type { Show, ShowConfig, Block, LogEntry, TallyState, Action, MediaSyncState, GtTemplate } from '@/lib/types';
 import { fetchRundown, fetchShows, connectWebSocket, executeCue, connectVmix, syncMedia, getMediaSyncStatus, setMediaFolder as setMediaFolderApi } from '@/lib/tauri-api';
 
 interface AutomatorState {
@@ -16,6 +16,7 @@ interface AutomatorState {
   show: Show | null;
   config: ShowConfig | null;
   blocks: Block[];
+  gtTemplates: GtTemplate[];
 
   // Execution
   currentBlockIdx: number;
@@ -68,6 +69,7 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
   show: null,
   config: null,
   blocks: [],
+  gtTemplates: [],
   currentBlockIdx: 0,
   selectedElementId: null,
   executionLog: [],
@@ -139,6 +141,7 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
         show: data.show,
         config: data.config,
         blocks: data.blocks,
+        gtTemplates: data.gt_templates || [],
         serverConnected: true,
         currentBlockIdx: 0,
         selectedElementId: null,
@@ -260,7 +263,7 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
   },
 
   cueElement: async (elementId) => {
-    const { blocks, config, ws } = get();
+    const { blocks, config, ws, gtTemplates } = get();
     // Find element and its actions
     let element = null;
     let actions: Action[] = [];
@@ -275,7 +278,83 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       if (element) break;
     }
 
-    if (!element || actions.length === 0) {
+    if (!element) {
+      get().addLog({
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        type: 'cue',
+        elementTitle: 'unknown',
+        result: 'error',
+        message: 'Element not found',
+      });
+      return;
+    }
+
+    // GT Template path: auto-generate SetText + OverlayIn actions
+    if (element.gt_template_id && element.gt_field_values) {
+      const gt = gtTemplates.find(t => t.id === element!.gt_template_id);
+      if (gt) {
+        const delayMs = config?.action_delay_ms || 50;
+        const gtActions = gt.fields.map((field, i) => ({
+          id: `gt-set-${i}`,
+          phase: 'on_cue',
+          vmix_function: 'SetText',
+          vmix_input: gt.vmix_input_key,
+          vmix_params: {
+            SelectedName: field.name,
+            Value: element!.gt_field_values?.[field.name] || field.default || '',
+          },
+          delay_ms: i > 0 ? delayMs : 0,
+        }));
+        // Add OverlayIn at the end
+        gtActions.push({
+          id: 'gt-overlay',
+          phase: 'on_cue',
+          vmix_function: `OverlayInput${gt.overlay_number}In`,
+          vmix_input: gt.vmix_input_key,
+          vmix_params: {},
+          delay_ms: delayMs,
+        });
+
+        const idempotencyKey = crypto.randomUUID();
+        const rustConfig = config ? {
+          clip_pool_a_key: config.clip_pool_a_key,
+          clip_pool_b_key: config.clip_pool_b_key,
+        } : null;
+        const result = await executeCue(elementId, gtActions, rustConfig);
+
+        if (ws) {
+          ws.send(JSON.stringify({
+            channel: 'execution',
+            type: result.ok ? 'cue_ack' : 'error',
+            seq: ++seqCounter,
+            idempotencyKey,
+            timestamp: new Date().toISOString(),
+            payload: {
+              elementId,
+              elementTitle: element.title,
+              vmixResult: result.ok ? 'OK' : 'ERROR',
+              latencyMs: result.latencyMs,
+              source: 'automator',
+            },
+          }));
+        }
+
+        get().addLog({
+          id: idempotencyKey,
+          timestamp: new Date().toISOString(),
+          type: 'cue',
+          elementTitle: element.title || gt.name,
+          vmixFunction: gtActions.map(a => a.vmix_function).join(' → '),
+          result: result.ok ? 'ok' : 'error',
+          latencyMs: result.latencyMs,
+        });
+        return;
+      }
+    }
+
+    // Manual actions path (existing)
+    if (actions.length === 0) {
       get().addLog({
         id: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
@@ -287,17 +366,27 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       return;
     }
 
-    // Resolve variables in targets
-    const resolvedActions = actions.map(a => ({
-      vmix_function: a.vmix_function,
-      target: resolveVar(a.target, config),
-      field: a.field,
-      value: resolveVar(a.value, config),
-      delay_ms: a.delay_ms,
-    }));
+    // Convert DB action format (target/field/value) to Rust engine format (vmix_input/vmix_params)
+    const resolvedActions = actions.map(a => {
+      const vmixParams: Record<string, string> = {};
+      if (a.field) vmixParams['SelectedName'] = a.field;
+      if (a.value) vmixParams['Value'] = resolveVar(a.value, config) || '';
+      return {
+        id: a.id,
+        phase: a.phase,
+        vmix_function: a.vmix_function,
+        vmix_input: resolveVar(a.target, config),
+        vmix_params: Object.keys(vmixParams).length > 0 ? vmixParams : null,
+        delay_ms: a.delay_ms,
+      };
+    });
 
     const idempotencyKey = crypto.randomUUID();
-    const result = await executeCue(elementId, resolvedActions);
+    const rustConfig = config ? {
+      clip_pool_a_key: config.clip_pool_a_key,
+      clip_pool_b_key: config.clip_pool_b_key,
+    } : null;
+    const result = await executeCue(elementId, resolvedActions, rustConfig);
 
     // Send to WS
     if (ws) {
@@ -345,16 +434,27 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
 
     if (!element || actions.length === 0) return;
 
-    const resolvedActions = actions.map(a => ({
-      vmix_function: a.vmix_function,
-      target: resolveVar(a.target, config),
-      field: a.field,
-      value: resolveVar(a.value, config),
-      delay_ms: a.delay_ms,
-    }));
+    // Convert to Rust engine format
+    const resolvedActions = actions.map(a => {
+      const vmixParams: Record<string, string> = {};
+      if (a.field) vmixParams['SelectedName'] = a.field;
+      if (a.value) vmixParams['Value'] = resolveVar(a.value, config) || '';
+      return {
+        id: a.id,
+        phase: a.phase,
+        vmix_function: a.vmix_function,
+        vmix_input: resolveVar(a.target, config),
+        vmix_params: Object.keys(vmixParams).length > 0 ? vmixParams : null,
+        delay_ms: a.delay_ms,
+      };
+    });
 
     const idempotencyKey = crypto.randomUUID();
-    const result = await executeCue(elementId, resolvedActions);
+    const rustConfig = config ? {
+      clip_pool_a_key: config.clip_pool_a_key,
+      clip_pool_b_key: config.clip_pool_b_key,
+    } : null;
+    const result = await executeCue(elementId, resolvedActions, rustConfig);
 
     if (ws) {
       ws.send(JSON.stringify({
@@ -398,11 +498,11 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
 
     if (channel === 'rundown') {
       // Reload rundown on any change
-      if (['block_created', 'block_updated', 'block_deleted', 'element_created', 'element_updated', 'element_deleted', 'action_created', 'action_updated', 'action_deleted'].includes(type)) {
+      if (['block_created', 'block_updated', 'block_deleted', 'element_created', 'element_updated', 'element_deleted', 'action_created', 'action_updated', 'action_deleted', 'gt_template_created', 'gt_template_updated', 'gt_template_deleted'].includes(type)) {
         const { show, serverUrl } = get();
         if (show) {
           fetchRundown(serverUrl, show.id).then(data => {
-            set({ blocks: data.blocks, show: data.show, config: data.config });
+            set({ blocks: data.blocks, show: data.show, config: data.config, gtTemplates: data.gt_templates || [] });
           }).catch(() => {});
         }
       }

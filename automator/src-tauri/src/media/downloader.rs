@@ -30,6 +30,7 @@ pub struct MediaSyncState {
     pub id: String,
     pub original_name: String,
     pub size_bytes: u64,
+    pub category: Option<String>,
     pub status: SyncStatus,
     pub progress: Option<f64>,
     pub local_path: Option<String>,
@@ -57,6 +58,22 @@ struct MediaSyncCompleteEvent {
 struct MediaSyncErrorEvent {
     id: String,
     error: String,
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/// Map a category string to a subfolder name.
+fn category_folder(category: Option<&str>) -> &str {
+    match category {
+        Some("clip") => "clips",
+        Some("stinger") => "stingers",
+        Some("graphic") => "graphics",
+        Some("lower_third") => "lower_thirds",
+        Some("audio") => "audio",
+        _ => "other",
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -126,8 +143,20 @@ impl MediaDownloader {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
+            let category = media
+                .get("category")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
 
-            let local_path = show_folder.join(&filename);
+            // Build target folder with category subfolder
+            let subfolder = category_folder(category.as_deref());
+            let target_folder = show_folder.join(subfolder);
+            if let Err(e) = tokio::fs::create_dir_all(&target_folder).await {
+                log::error!("Failed to create subfolder {:?}: {}", target_folder, e);
+                continue;
+            }
+
+            let local_path = target_folder.join(&filename);
 
             // Check if already synced.
             if local_path.exists() {
@@ -139,6 +168,7 @@ impl MediaDownloader {
                                 id: id.clone(),
                                 original_name: original_name.clone(),
                                 size_bytes,
+                                category: category.clone(),
                                 status: SyncStatus::Synced,
                                 progress: Some(1.0),
                                 local_path: Some(local_path.to_string_lossy().to_string()),
@@ -157,6 +187,7 @@ impl MediaDownloader {
                     id: id.clone(),
                     original_name: original_name.clone(),
                     size_bytes,
+                    category: category.clone(),
                     status: SyncStatus::Pending,
                     progress: Some(0.0),
                     local_path: None,
@@ -168,7 +199,7 @@ impl MediaDownloader {
             let sem = semaphore.clone();
             let app = app_handle.clone();
             let server_url = self.server_url.clone();
-            let show_folder_clone = show_folder.clone();
+            let target_folder_clone = target_folder.clone();
 
             let media_value = media.clone();
             handles.push(tokio::spawn(async move {
@@ -176,7 +207,7 @@ impl MediaDownloader {
                 download_file(
                     media_value,
                     &server_url,
-                    &show_folder_clone,
+                    &target_folder_clone,
                     &filename,
                     size_bytes,
                     &checksum,
@@ -242,6 +273,10 @@ impl MediaDownloader {
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
+        let category = media
+            .get("category")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
 
         self.files.insert(
             id.clone(),
@@ -249,6 +284,7 @@ impl MediaDownloader {
                 id: id.clone(),
                 original_name,
                 size_bytes,
+                category: category.clone(),
                 status: SyncStatus::Pending,
                 progress: Some(0.0),
                 local_path: None,
@@ -257,8 +293,10 @@ impl MediaDownloader {
         );
 
         let show_folder = self.media_folder.join(&self.show_id);
-        if let Err(e) = tokio::fs::create_dir_all(&show_folder).await {
-            log::error!("Failed to create media folder {:?}: {}", show_folder, e);
+        let subfolder = category_folder(category.as_deref());
+        let target_folder = show_folder.join(subfolder);
+        if let Err(e) = tokio::fs::create_dir_all(&target_folder).await {
+            log::error!("Failed to create media folder {:?}: {}", target_folder, e);
             if let Some(state) = self.files.get_mut(&id) {
                 state.status = SyncStatus::Error;
                 state.error = Some(format!("Cannot create folder: {}", e));
@@ -267,13 +305,13 @@ impl MediaDownloader {
         }
 
         let server_url = self.server_url.clone();
-        let show_folder_clone = show_folder.clone();
+        let target_folder_clone = target_folder.clone();
         let id_clone = id.clone();
 
         let result = download_file(
             media,
             &server_url,
-            &show_folder_clone,
+            &target_folder_clone,
             &filename,
             size_bytes,
             &checksum,
@@ -317,7 +355,7 @@ impl MediaDownloader {
 async fn download_file(
     media: serde_json::Value,
     server_url: &str,
-    show_folder: &PathBuf,
+    target_folder: &PathBuf,
     filename: &str,
     size_bytes: u64,
     checksum: &str,
@@ -329,8 +367,8 @@ async fn download_file(
         .unwrap_or("")
         .to_string();
 
-    let final_path = show_folder.join(filename);
-    let partial_path = show_folder.join(format!("{}.partial", filename));
+    let final_path = target_folder.join(filename);
+    let partial_path = target_folder.join(format!("{}.partial", filename));
 
     // Determine how many bytes we already have (resume support).
     let existing_bytes: u64 = if partial_path.exists() {
