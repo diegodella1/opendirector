@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { rejectIfLive } from '@/lib/state-machine';
+import { recordUndoEntry } from '@/lib/undo';
 
 // PUT /api/shows/:id/blocks/:blockId/elements/:elementId/actions/reorder
 export async function PUT(
@@ -37,11 +38,27 @@ export async function PUT(
     );
   }
 
+  // Snapshot old order for undo
+  const { data: oldActions } = await supabase
+    .from('od_actions')
+    .select('id')
+    .eq('element_id', params.elementId)
+    .order('position');
+  const oldOrder = (oldActions || []).map((a: { id: string }) => a.id);
+
   // Update positions
   await Promise.all(
     order.map((id, idx) =>
       supabase.from('od_actions').update({ position: idx }).eq('id', id)
     )
+  );
+
+  // Record undo entry
+  await recordUndoEntry(
+    params.id,
+    'reorder_actions',
+    { order },
+    { order: oldOrder }
   );
 
   // Broadcast

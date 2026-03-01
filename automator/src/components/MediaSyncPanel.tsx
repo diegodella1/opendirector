@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useAutomatorStore } from '@/stores/automator-store';
+import { useAutomatorStore, useActiveShowState } from '@/stores/automator-store';
 import type { MediaSyncState } from '@/lib/types';
 
 // Category display config with simple SVG icons
@@ -90,7 +90,8 @@ function CategoryGroup({ folder, files }: { folder: string; files: MediaSyncStat
 }
 
 export function MediaSyncPanel() {
-  const { mediaSyncStatus, triggerMediaSync } = useAutomatorStore();
+  const { mediaSyncStatus } = useActiveShowState();
+  const triggerMediaSync = useAutomatorStore(s => s.triggerMediaSync);
 
   const grouped = useMemo(() => {
     const groups: Record<string, MediaSyncState[]> = {};

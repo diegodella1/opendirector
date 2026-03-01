@@ -1,4 +1,4 @@
-import { useAutomatorStore } from '@/stores/automator-store';
+import { useAutomatorStore, useActiveShowState } from '@/stores/automator-store';
 import type { ElementWithActions } from '@/lib/types';
 
 const typeStyles: Record<string, { label: string; bg: string }> = {
@@ -22,7 +22,8 @@ interface Props {
 }
 
 export function ElementRow({ element }: Props) {
-  const { selectedElementId, selectElement, cueElement, executeStep, requestedElementId, clearRequestedElement, clipPosition } = useAutomatorStore();
+  const { selectedElementId, requestedElementId, clipPosition } = useActiveShowState();
+  const { selectElement, cueElement, executeStep, clearRequestedElement } = useAutomatorStore();
   const isSelected = selectedElementId === element.id;
   const isRequested = requestedElementId === element.id;
   const typeInfo = typeStyles[element.type] || { label: '?', bg: 'bg-gray-500' };
@@ -30,7 +31,6 @@ export function ElementRow({ element }: Props) {
   const cueActions = element.actions.filter(a => a.phase === 'on_cue');
   const stepActions = element.actions.filter(a => a.phase === 'step');
 
-  // Clip progress: show when this element's vMix input matches the currently playing clip
   const isClipPlaying = element.type === 'clip'
     && clipPosition
     && element.vmix_input_key
@@ -41,7 +41,6 @@ export function ElementRow({ element }: Props) {
     ? Math.min(clipPosition.positionMs / clipPosition.durationMs, 1)
     : 0;
 
-  // Timecode trigger marker position (as fraction 0-1)
   const triggerMarker = (() => {
     if (!isClipPlaying || element.trigger_type !== 'timecode' || !element.trigger_config) return null;
     const at = element.trigger_config.at;
@@ -64,14 +63,12 @@ export function ElementRow({ element }: Props) {
           : 'hover:bg-od-surface-light/50'
       }`}
     >
-      {/* Clip progress bar (thin, at the bottom of the row) */}
       {isClipPlaying && (
         <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-od-surface-light/30 rounded-b overflow-hidden">
           <div
             className="h-full bg-purple-500 transition-[width] duration-200 ease-linear"
             style={{ width: `${clipProgress * 100}%` }}
           />
-          {/* Timecode trigger marker */}
           {triggerMarker !== null && (
             <div
               className="absolute top-0 h-full w-[2px] bg-yellow-400"
@@ -82,17 +79,14 @@ export function ElementRow({ element }: Props) {
         </div>
       )}
 
-      {/* Type badge */}
       <span className={`${typeInfo.bg} text-white text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0`}>
         {typeInfo.label}
       </span>
 
-      {/* Title */}
       <span className="text-sm text-od-text flex-1 truncate">
         {element.title || 'Untitled'}
       </span>
 
-      {/* Duration / clip position */}
       {isClipPlaying ? (
         <span className="text-purple-400 text-xs font-mono shrink-0">
           {formatMs(clipPosition.positionMs)}/{formatMs(clipPosition.durationMs)}
@@ -103,7 +97,6 @@ export function ElementRow({ element }: Props) {
         </span>
       ) : null}
 
-      {/* CUE button */}
       {cueActions.length > 0 && (
         <button
           onClick={(e) => {
@@ -121,7 +114,6 @@ export function ElementRow({ element }: Props) {
         </button>
       )}
 
-      {/* Step buttons */}
       {stepActions.map((action) => (
         <button
           key={action.id}
@@ -144,7 +136,6 @@ export function ElementRow({ element }: Props) {
   );
 }
 
-/** Format milliseconds as MM:SS */
 function formatMs(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
   const m = Math.floor(totalSec / 60);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAutomatorStore } from '@/stores/automator-store';
+import { useActiveShowState } from '@/stores/automator-store';
 import { ElementRow } from './ElementRow';
 import {
   elapsedSec,
@@ -18,7 +18,7 @@ const blockStatusStyles: Record<string, string> = {
 };
 
 export function RundownPanel() {
-  const { blocks, currentBlockIdx, blockStartedAt, blockTimings } = useAutomatorStore();
+  const { blocks, currentBlockIdx, blockStartedAt, blockTimings } = useActiveShowState();
   const [backTimes, setBackTimes] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -39,7 +39,6 @@ export function RundownPanel() {
         const timing = blockTimings[block.id];
         const bt = backTimes[block.id];
 
-        // Over/under badge for completed blocks
         let ouBadge = null;
         if (isPast && block.estimated_duration_sec > 0 && timing?.actualDurationSec != null) {
           const delta = overUnder(block.estimated_duration_sec, timing.actualDurationSec);
@@ -56,7 +55,6 @@ export function RundownPanel() {
             key={block.id}
             className={`mb-2 border-l-4 rounded-r-lg ${statusStyle} ${isPast ? 'opacity-50' : ''}`}
           >
-            {/* Block header */}
             <div className="flex items-center gap-3 px-3 py-2 bg-od-surface/50">
               <span className="text-od-text-dim text-xs font-mono w-8">
                 {String(idx + 1).padStart(2, '0')}
@@ -75,7 +73,6 @@ export function RundownPanel() {
                   {formatDuration(block.estimated_duration_sec)}
                 </span>
               )}
-              {/* Back-time for future blocks */}
               {isFuture && bt && (
                 <span className="text-od-accent text-xs font-mono font-medium">
                   {formatClockTime(bt)}
@@ -83,7 +80,6 @@ export function RundownPanel() {
               )}
             </div>
 
-            {/* Elements */}
             {block.elements.length > 0 && (
               <div className="px-3 pb-2">
                 {block.elements.map((element) => (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAutomatorStore } from '@/stores/automator-store';
+import { useAutomatorStore, useActiveShowState } from '@/stores/automator-store';
 import {
   elapsedSec,
   blockRemaining,
@@ -10,7 +10,8 @@ import {
 } from '@/lib/timing';
 
 export function ControlBar() {
-  const { currentBlockIdx, blocks, show, nextBlock, prevBlock, disconnect, stopShow, resetShow, toggleRehearsal, panicCut, config, vmixConnected, blockStartedAt, showStartedAt } = useAutomatorStore();
+  const { show, blocks, currentBlockIdx, blockStartedAt, showStartedAt, config } = useActiveShowState();
+  const { nextBlock, prevBlock, stopShow, resetShow, toggleRehearsal, panicCut, vmixConnected, closeTab, activeTabId } = useAutomatorStore();
   const currentBlock = blocks[currentBlockIdx];
   const totalBlocks = blocks.length;
   const [, setTick] = useState(0);
@@ -31,7 +32,6 @@ export function ControlBar() {
     : formatDuration(elapsed);
   const countdownColor = est > 0 ? timerColor(remaining, est) : 'text-white';
 
-  // Show timer
   const showH = Math.floor(showElapsed / 3600);
   const showM = Math.floor((showElapsed % 3600) / 60);
   const showS = showElapsed % 60;
@@ -101,26 +101,23 @@ export function ControlBar() {
 
       {/* Timing */}
       <div className="flex items-center gap-6">
-        {/* Block countdown */}
         <div className="text-center">
           <div className="text-od-text-dim text-[10px] uppercase">Block</div>
           <div className={`font-mono text-lg font-bold ${countdownColor}`}>
             {blockCountdownStr}
           </div>
         </div>
-        {/* Show timer */}
         <div className="text-center">
           <div className="text-od-text-dim text-[10px] uppercase">Show</div>
           <div className="font-mono text-sm text-white">{showTimerStr}</div>
         </div>
-        {/* Show remaining */}
         <div className="text-center">
           <div className="text-od-text-dim text-[10px] uppercase">Remaining</div>
           <div className="font-mono text-sm text-od-text">{formatDuration(showRem)}</div>
         </div>
       </div>
 
-      {/* Block info + Disconnect */}
+      {/* Block info + Close tab */}
       <div className="flex items-center gap-4">
         <div className="text-center">
           <span className="text-od-text-dim text-xs">Block </span>
@@ -132,7 +129,7 @@ export function ControlBar() {
           )}
         </div>
         <button
-          onClick={disconnect}
+          onClick={() => { if (activeTabId) closeTab(activeTabId); }}
           className="px-3 py-1.5 text-od-text-dim text-xs hover:text-red-400 transition-colors"
         >
           Disconnect

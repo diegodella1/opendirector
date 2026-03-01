@@ -38,6 +38,16 @@ export function getServerUrl() {
   return _serverUrl;
 }
 
+// Set active show for multi-tab support
+export async function setActiveShow(showId: string): Promise<void> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    await invoke('set_active_show', { showId });
+    return;
+  }
+  console.log(`[MOCK] set_active_show: ${showId}`);
+}
+
 // Connect to vMix TCP (Tauri only, mock in browser)
 export async function connectVmix(host: string, port: number): Promise<boolean> {
   const invoke = await getInvoke();

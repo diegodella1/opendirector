@@ -1,13 +1,9 @@
-import { useAutomatorStore } from '@/stores/automator-store';
+import { useAutomatorStore, useActiveShowState } from '@/stores/automator-store';
 
 export function PreflightPanel() {
-  const {
-    vmixConnected,
-    preflightResults,
-    preflightLoading,
-    preflightError,
-    runPreflight,
-  } = useAutomatorStore();
+  const { vmixConnected } = useAutomatorStore();
+  const { preflightResults, preflightLoading, preflightError } = useActiveShowState();
+  const runPreflight = useAutomatorStore(s => s.runPreflight);
 
   const errors = preflightResults?.filter(r => r.level === 'error') || [];
   const warnings = preflightResults?.filter(r => r.level === 'warning') || [];
@@ -17,7 +13,6 @@ export function PreflightPanel() {
 
   return (
     <div className="border-t border-od-surface-light bg-od-bg">
-      {/* Header */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-od-surface-light">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-white">Pre-Flight Check</span>
@@ -53,14 +48,12 @@ export function PreflightPanel() {
         </button>
       </div>
 
-      {/* Error banner */}
       {preflightError && (
         <div className="px-3 py-1.5 bg-red-500/10 border-b border-red-500/20">
           <span className="text-[11px] text-red-400">{preflightError}</span>
         </div>
       )}
 
-      {/* Error summary banner */}
       {hasErrors && !preflightLoading && (
         <div className="px-3 py-1.5 bg-red-500/10 border-b border-red-500/20 flex items-center gap-2">
           <span className="text-[11px] text-red-400">
@@ -69,7 +62,6 @@ export function PreflightPanel() {
         </div>
       )}
 
-      {/* Results */}
       {preflightResults && !preflightLoading && (
         <div className="max-h-40 overflow-y-auto">
           {errors.map(check => (
@@ -84,7 +76,6 @@ export function PreflightPanel() {
         </div>
       )}
 
-      {/* Empty state */}
       {!preflightResults && !preflightLoading && !preflightError && (
         <div className="px-3 py-2 text-od-text-dim text-[11px]">
           {vmixConnected

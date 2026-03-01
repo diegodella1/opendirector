@@ -260,6 +260,19 @@ pub async fn disconnect_all(state: State<'_, AppState>) -> Result<(), String> {
     Ok(())
 }
 
+/// Set the active show for multi-tab support.
+/// Rust only needs to know which show is active for media sync context.
+#[tauri::command]
+pub async fn set_active_show(
+    state: State<'_, AppState>,
+    show_id: String,
+) -> Result<(), String> {
+    let mut current = state.show_id.lock().await;
+    *current = Some(show_id.clone());
+    log::info!("Active show set to {}", show_id);
+    Ok(())
+}
+
 /// Get current connection status.
 #[tauri::command]
 pub async fn get_status(state: State<'_, AppState>) -> Result<StatusInfo, String> {

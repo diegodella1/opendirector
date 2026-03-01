@@ -1,7 +1,9 @@
-import { useAutomatorStore } from '@/stores/automator-store';
+import { useAutomatorStore, useActiveShowState } from '@/stores/automator-store';
 
 export function StatusBar() {
-  const { show, vmixConnected, wsConnected, vmixHost, vmixPort, mediaSyncStatus, executionMode, setExecutionMode, currentClipPool, tally } = useAutomatorStore();
+  const { vmixConnected, vmixHost, vmixPort, tally } = useAutomatorStore();
+  const { show, wsConnected, mediaSyncStatus, executionMode, currentClipPool } = useActiveShowState();
+  const setExecutionMode = useAutomatorStore(s => s.setExecutionMode);
   const mediaSynced = mediaSyncStatus.filter(m => m.status === 'synced').length;
   const mediaTotal = mediaSyncStatus.length;
   const allSynced = mediaTotal > 0 && mediaSynced === mediaTotal;

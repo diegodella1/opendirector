@@ -59,6 +59,7 @@ pub fn run() {
             commands::execute_cue,
             commands::execute_step,
             commands::send_vmix_command,
+            commands::set_active_show,
             commands::get_status,
             commands::set_media_folder,
             commands::sync_media,

@@ -1,7 +1,8 @@
 import { useEffect, useCallback } from 'react';
-import { useAutomatorStore } from '@/stores/automator-store';
+import { useAutomatorStore, useActiveShowState } from '@/stores/automator-store';
 import { listenEvent } from '@/lib/tauri-api';
 import { ConnectionScreen } from '@/components/ConnectionScreen';
+import { TabBar } from '@/components/TabBar';
 import { StatusBar } from '@/components/StatusBar';
 import { RundownPanel } from '@/components/RundownPanel';
 import { TallyPanel } from '@/components/TallyPanel';
@@ -11,11 +12,12 @@ import { MediaSyncPanel } from '@/components/MediaSyncPanel';
 import { PreflightPanel } from '@/components/PreflightPanel';
 
 export default function App() {
-  const { show, blocks, currentBlockIdx, selectedElementId, cueElement, executeStep, nextBlock, prevBlock, selectElement, stopShow, resetShow, toggleRehearsal, panicCut } = useAutomatorStore();
+  const tabs = useAutomatorStore(s => s.tabs);
+  const { show, blocks, currentBlockIdx, selectedElementId } = useActiveShowState();
+  const { cueElement, executeStep, nextBlock, prevBlock, selectElement, stopShow, resetShow, toggleRehearsal, panicCut } = useAutomatorStore();
 
   // Global keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Don't handle if typing in an input
     if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
 
     switch (e.key) {
@@ -77,7 +79,6 @@ export default function App() {
       case 'F5': case 'F6': case 'F7': case 'F8': {
         e.preventDefault();
         if (!selectedElementId) break;
-        // Find step actions matching this hotkey
         for (const block of blocks) {
           for (const el of block.elements) {
             if (el.id === selectedElementId) {
@@ -121,10 +122,12 @@ export default function App() {
       unlisteners.push(await listenEvent('vmix-recording', (payload: unknown) => {
         const recording = payload as boolean;
         const state = useAutomatorStore.getState();
-        state.tally = { ...state.tally, recording };
-        useAutomatorStore.setState({ tally: { ...state.tally, recording } });
+        useAutomatorStore.setState({
+          tally: { ...state.tally, recording },
+        });
         // Broadcast to WS for Go Live
-        const ws = state.ws;
+        const tab = state.activeTabId ? state.tabs.get(state.activeTabId) : null;
+        const ws = tab?.ws;
         if (ws?.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ channel: 'tally', type: 'tally_update', timestamp: new Date().toISOString(), payload: { ...state.tally, recording } }));
         }
@@ -133,9 +136,11 @@ export default function App() {
       unlisteners.push(await listenEvent('vmix-streaming', (payload: unknown) => {
         const streaming = payload as boolean;
         const state = useAutomatorStore.getState();
-        state.tally = { ...state.tally, streaming };
-        useAutomatorStore.setState({ tally: { ...state.tally, streaming } });
-        const ws = state.ws;
+        useAutomatorStore.setState({
+          tally: { ...state.tally, streaming },
+        });
+        const tab = state.activeTabId ? state.tabs.get(state.activeTabId) : null;
+        const ws = tab?.ws;
         if (ws?.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ channel: 'tally', type: 'tally_update', timestamp: new Date().toISOString(), payload: { ...state.tally, streaming } }));
         }
@@ -144,7 +149,10 @@ export default function App() {
       unlisteners.push(await listenEvent('ws-media', (payload: unknown) => {
         try {
           const msg = JSON.parse(payload as string);
-          useAutomatorStore.getState().handleWsMessage(msg);
+          const state = useAutomatorStore.getState();
+          if (state.activeTabId) {
+            state.handleWsMessage(state.activeTabId, msg);
+          }
         } catch { /* ignore */ }
       }));
     };
@@ -153,13 +161,14 @@ export default function App() {
     return () => { unlisteners.forEach(fn => fn()); };
   }, []);
 
-  if (!show) {
+  if (tabs.size === 0) {
     return <ConnectionScreen />;
   }
 
   return (
     <div className="flex flex-col h-screen bg-od-bg">
       <StatusBar />
+      <TabBar />
       <div className="flex-1 overflow-hidden flex">
         <div className="flex-1 overflow-hidden">
           <RundownPanel />

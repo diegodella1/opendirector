@@ -45,9 +45,13 @@ export async function applyData(
   try {
     switch (actionType) {
       case 'create_block': {
-        // Redo: recreate block
-        const block = data.block as Record<string, unknown>;
-        await supabase.from('od_blocks').insert(block);
+        if (data.block) {
+          // Redo: recreate block
+          await supabase.from('od_blocks').insert(data.block);
+        } else if (data.blockId) {
+          // Undo: delete the created block
+          await supabase.from('od_blocks').delete().eq('id', data.blockId);
+        }
         break;
       }
       case 'delete_block': {
@@ -78,7 +82,11 @@ export async function applyData(
       }
       case 'create_element': {
         if (data.element) {
+          // Redo: recreate element
           await supabase.from('od_elements').insert(data.element);
+        } else if (data.elementId) {
+          // Undo: delete the created element
+          await supabase.from('od_elements').delete().eq('id', data.elementId);
         }
         break;
       }
@@ -117,6 +125,42 @@ export async function applyData(
           await Promise.all(
             order.map((id, idx) =>
               supabase.from('od_elements').update({ position: idx }).eq('id', id)
+            )
+          );
+        }
+        break;
+      }
+      case 'create_action': {
+        if (data.action) {
+          // Redo: recreate action
+          await supabase.from('od_actions').insert(data.action);
+        } else if (data.actionId) {
+          // Undo: delete the created action
+          await supabase.from('od_actions').delete().eq('id', data.actionId);
+        }
+        break;
+      }
+      case 'delete_action': {
+        if (data.actionId) {
+          // Forward: delete action
+          await supabase.from('od_actions').delete().eq('id', data.actionId);
+        } else if (data.action) {
+          // Reverse: recreate action
+          await supabase.from('od_actions').insert(data.action);
+        }
+        break;
+      }
+      case 'update_action': {
+        const { actionId, changes } = data as { actionId: string; changes: Record<string, unknown> };
+        await supabase.from('od_actions').update(changes).eq('id', actionId);
+        break;
+      }
+      case 'reorder_actions': {
+        const order = data.order as string[];
+        if (order) {
+          await Promise.all(
+            order.map((id, idx) =>
+              supabase.from('od_actions').update({ position: idx }).eq('id', id)
             )
           );
         }

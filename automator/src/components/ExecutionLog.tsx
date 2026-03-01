@@ -1,4 +1,4 @@
-import { useAutomatorStore } from '@/stores/automator-store';
+import { useActiveShowState } from '@/stores/automator-store';
 
 const resultColors: Record<string, string> = {
   ok: 'text-green-400',
@@ -7,7 +7,7 @@ const resultColors: Record<string, string> = {
 };
 
 export function ExecutionLog() {
-  const { executionLog } = useAutomatorStore();
+  const { executionLog } = useActiveShowState();
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col">

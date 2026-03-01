@@ -3,7 +3,7 @@ import { useAutomatorStore } from '@/stores/automator-store';
 import type { Show } from '@/lib/types';
 
 export function ConnectionScreen() {
-  const { serverUrl, vmixHost, vmixPort, mediaFolder, setServerUrl, setVmixHost, setVmixPort, setMediaFolder, loadShows, shows, connectToShow, connectToVmix } = useAutomatorStore();
+  const { serverUrl, vmixHost, vmixPort, mediaFolder, setServerUrl, setVmixHost, setVmixPort, setMediaFolder, loadShows, shows, openTab, connectToVmix } = useAutomatorStore();
   const [selectedShowId, setSelectedShowId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -21,7 +21,7 @@ export function ConnectionScreen() {
     setError('');
     try {
       await connectToVmix();
-      await connectToShow(selectedShowId);
+      await openTab(selectedShowId);
     } catch (e) {
       setError(String(e));
     }
