@@ -73,6 +73,8 @@ export default function PrompterPage() {
   const [showConfig, setShowConfig] = useState(false);
   const [activeSignal, setActiveSignal] = useState<Signal | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [scrollSyncMode, setScrollSyncMode] = useState<'off' | 'master' | 'follower'>('off');
+  const wsRef = useRef<WebSocket | null>(null);
 
   // Config from DB
   const [config, setConfig] = useState<PrompterConfig | null>(null);
@@ -116,10 +118,11 @@ export default function PrompterPage() {
     load();
   }, [showId]);
 
-  // WebSocket for live script updates + signals
+  // WebSocket for live script updates + signals + scroll sync
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    wsRef.current = ws;
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: 'join', payload: { showId } }));
@@ -179,20 +182,46 @@ export default function PrompterPage() {
         setConfig(msg.payload);
         if (msg.payload.font_size) setFontSize(msg.payload.font_size);
       }
+
+      // Scroll sync (follower receives)
+      if (msg.channel === 'prompter' && msg.type === 'scroll_sync') {
+        if (containerRef.current && scrollSyncMode === 'follower') {
+          containerRef.current.scrollTop = msg.payload.scrollTop;
+        }
+      }
     };
 
-    return () => ws.close();
+    return () => { ws.close(); wsRef.current = null; };
   }, [showId]);
 
-  // Auto-scroll
+  // Auto-scroll + master sync broadcast
   useEffect(() => {
     if (scrollSpeed === 0) return;
+    let syncCounter = 0;
     const interval = setInterval(() => {
       if (containerRef.current) {
         containerRef.current.scrollTop += scrollSpeed;
+        // Broadcast scroll position to followers (every 5 frames to reduce traffic)
+        syncCounter++;
+        if (scrollSyncMode === 'master' && syncCounter % 5 === 0 && wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
+            channel: 'prompter',
+            type: 'scroll_sync',
+            timestamp: new Date().toISOString(),
+            payload: { scrollTop: containerRef.current.scrollTop },
+          }));
+        }
       }
     }, 1000 / 60);
     return () => clearInterval(interval);
+  }, [scrollSpeed, scrollSyncMode]);
+
+  // Wake lock — keep screen on while scrolling
+  useEffect(() => {
+    if (scrollSpeed === 0 || !('wakeLock' in navigator)) return;
+    let lock: WakeLockSentinel | null = null;
+    navigator.wakeLock.request('screen').then(l => { lock = l; }).catch(() => {});
+    return () => { lock?.release().catch(() => {}); };
   }, [scrollSpeed]);
 
   // Keyboard controls
@@ -366,7 +395,7 @@ export default function PrompterPage() {
 
       {/* Config panel */}
       {showConfig && (
-        <div className="bg-gray-900 border-b border-gray-700 px-4 py-3 shrink-0 grid grid-cols-4 gap-4 text-sm"
+        <div className="bg-gray-900 border-b border-gray-700 px-4 py-3 shrink-0 grid grid-cols-5 gap-4 text-sm"
           style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}>
           <div>
             <label className="text-gray-400 text-xs block mb-1">Font Size</label>
@@ -415,6 +444,19 @@ export default function PrompterPage() {
               className="w-full"
             />
             <span className="text-gray-400 text-xs">{marginPct}%</span>
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs block mb-1">Scroll Sync</label>
+            <button
+              onClick={() => setScrollSyncMode(m => m === 'off' ? 'master' : m === 'master' ? 'follower' : 'off')}
+              className={`px-3 py-1 rounded text-xs font-medium ${
+                scrollSyncMode === 'off' ? 'bg-gray-700 text-gray-400' :
+                scrollSyncMode === 'master' ? 'bg-blue-600 text-white' :
+                'bg-green-600 text-white'
+              }`}
+            >
+              {scrollSyncMode === 'off' ? 'OFF' : scrollSyncMode === 'master' ? 'MASTER' : 'FOLLOWER'}
+            </button>
           </div>
         </div>
       )}

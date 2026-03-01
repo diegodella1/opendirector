@@ -43,6 +43,7 @@ export interface Element {
   style: string;
   mode: string;
   trigger_type: string;
+  trigger_config: Record<string, unknown> | null;
   vmix_input_key: string | null;
   gt_template_id: string | null;
   gt_field_values: Record<string, string> | null;
@@ -96,6 +97,8 @@ export interface RundownFull {
 export interface TallyState {
   program: string | null;
   preview: string | null;
+  recording?: boolean;
+  streaming?: boolean;
 }
 
 export interface LogEntry {
@@ -107,6 +110,12 @@ export interface LogEntry {
   result: 'ok' | 'error' | 'pending';
   message?: string;
   latencyMs?: number;
+}
+
+export interface ClipPosition {
+  inputKey: string;
+  positionMs: number;
+  durationMs: number;
 }
 
 export interface MediaSyncState {

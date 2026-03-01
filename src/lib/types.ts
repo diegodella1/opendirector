@@ -51,6 +51,7 @@ export interface Block {
   script: string | null;
   notes: string | null;
   status: 'pending' | 'on_air' | 'done' | 'skipped';
+  actual_duration_sec: number | null;
 }
 
 export interface Element {
@@ -111,10 +112,10 @@ export interface WSMessage {
   payload: unknown;
 }
 
-// Full rundown (show + blocks + elements) for a single fetch
+// Full rundown (show + blocks + elements + actions) for a single fetch
 export interface Rundown {
   show: Show;
-  blocks: (Block & { elements: Element[] })[];
+  blocks: (Block & { elements: (Element & { actions: Action[] })[] })[];
   gt_templates: GtTemplate[];
 }
 

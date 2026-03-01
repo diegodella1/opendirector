@@ -1,7 +1,7 @@
 import { useAutomatorStore } from '@/stores/automator-store';
 
 export function StatusBar() {
-  const { show, vmixConnected, wsConnected, vmixHost, vmixPort, mediaSyncStatus, executionMode, setExecutionMode } = useAutomatorStore();
+  const { show, vmixConnected, wsConnected, vmixHost, vmixPort, mediaSyncStatus, executionMode, setExecutionMode, currentClipPool, tally } = useAutomatorStore();
   const mediaSynced = mediaSyncStatus.filter(m => m.status === 'synced').length;
   const mediaTotal = mediaSyncStatus.length;
   const allSynced = mediaTotal > 0 && mediaSynced === mediaTotal;
@@ -11,7 +11,11 @@ export function StatusBar() {
     <div className="bg-od-surface border-b border-od-surface-light px-4 py-1.5 flex items-center justify-between shrink-0">
       <div className="flex items-center gap-4">
         <span className="text-white font-semibold">{show?.name || 'No Show'}</span>
-        <span className="text-xs uppercase px-2 py-0.5 rounded bg-od-surface-light text-od-text-dim">
+        <span className={`text-xs uppercase px-2 py-0.5 rounded font-bold ${
+          show?.status === 'live' ? 'bg-red-600 text-white animate-pulse' :
+          show?.status === 'rehearsal' ? 'bg-yellow-600 text-black' :
+          'bg-od-surface-light text-od-text-dim'
+        }`}>
           {show?.status || '-'}
         </span>
         <span className="text-xs text-od-text-dim">v{show?.version || 0}</span>
@@ -37,6 +41,21 @@ export function StatusBar() {
           <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-400' : 'bg-red-400'}`} />
           Server WS
         </span>
+        <span className={`px-2 py-0.5 rounded font-bold text-xs ${
+          currentClipPool === 'a' ? 'bg-blue-600/30 text-blue-400' : 'bg-orange-600/30 text-orange-400'
+        }`}>
+          POOL {currentClipPool.toUpperCase()}
+        </span>
+        {tally.recording && (
+          <span className="px-2 py-0.5 rounded font-bold text-xs bg-red-600 text-white animate-pulse">
+            REC
+          </span>
+        )}
+        {tally.streaming && (
+          <span className="px-2 py-0.5 rounded font-bold text-xs bg-blue-600 text-white">
+            STREAM
+          </span>
+        )}
         {mediaTotal > 0 && (
           <span className={`flex items-center gap-1.5 ${allSynced ? 'text-green-400' : 'text-yellow-400'}`}>
             <span className={`w-2 h-2 rounded-full ${allSynced ? 'bg-green-400' : 'bg-yellow-400'} ${hasDownloading ? 'animate-pulse' : ''}`} />

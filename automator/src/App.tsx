@@ -8,9 +8,10 @@ import { TallyPanel } from '@/components/TallyPanel';
 import { ExecutionLog } from '@/components/ExecutionLog';
 import { ControlBar } from '@/components/ControlBar';
 import { MediaSyncPanel } from '@/components/MediaSyncPanel';
+import { PreflightPanel } from '@/components/PreflightPanel';
 
 export default function App() {
-  const { show, blocks, currentBlockIdx, selectedElementId, cueElement, executeStep, nextBlock, prevBlock, selectElement } = useAutomatorStore();
+  const { show, blocks, currentBlockIdx, selectedElementId, cueElement, executeStep, nextBlock, prevBlock, selectElement, stopShow, resetShow, toggleRehearsal, panicCut } = useAutomatorStore();
 
   // Global keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -28,8 +29,11 @@ export default function App() {
         break;
       case 'Escape':
         e.preventDefault();
-        // STOP — for now just deselect
-        selectElement(null);
+        stopShow();
+        break;
+      case 'F12':
+        e.preventDefault();
+        panicCut();
         break;
       case 'Backspace':
         e.preventDefault();
@@ -60,6 +64,15 @@ export default function App() {
         }
         break;
       }
+      case 'r':
+      case 'R':
+        e.preventDefault();
+        if (e.ctrlKey) {
+          toggleRehearsal();
+        } else {
+          resetShow();
+        }
+        break;
       case 'F1': case 'F2': case 'F3': case 'F4':
       case 'F5': case 'F6': case 'F7': case 'F8': {
         e.preventDefault();
@@ -78,7 +91,7 @@ export default function App() {
         break;
       }
     }
-  }, [blocks, currentBlockIdx, selectedElementId, nextBlock, prevBlock, cueElement, executeStep, selectElement]);
+  }, [blocks, currentBlockIdx, selectedElementId, nextBlock, prevBlock, cueElement, executeStep, selectElement, stopShow, resetShow, toggleRehearsal, panicCut]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -103,6 +116,29 @@ export default function App() {
       unlisteners.push(await listenEvent('media-sync-error', (payload: unknown) => {
         const p = payload as { id: string; error: string };
         useAutomatorStore.getState().markMediaError(p.id, p.error);
+      }));
+
+      unlisteners.push(await listenEvent('vmix-recording', (payload: unknown) => {
+        const recording = payload as boolean;
+        const state = useAutomatorStore.getState();
+        state.tally = { ...state.tally, recording };
+        useAutomatorStore.setState({ tally: { ...state.tally, recording } });
+        // Broadcast to WS for Go Live
+        const ws = state.ws;
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ channel: 'tally', type: 'tally_update', timestamp: new Date().toISOString(), payload: { ...state.tally, recording } }));
+        }
+      }));
+
+      unlisteners.push(await listenEvent('vmix-streaming', (payload: unknown) => {
+        const streaming = payload as boolean;
+        const state = useAutomatorStore.getState();
+        state.tally = { ...state.tally, streaming };
+        useAutomatorStore.setState({ tally: { ...state.tally, streaming } });
+        const ws = state.ws;
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ channel: 'tally', type: 'tally_update', timestamp: new Date().toISOString(), payload: { ...state.tally, streaming } }));
+        }
       }));
 
       unlisteners.push(await listenEvent('ws-media', (payload: unknown) => {
@@ -130,6 +166,7 @@ export default function App() {
         </div>
         <MediaSyncPanel />
       </div>
+      <PreflightPanel />
       <div className="flex border-t border-od-surface-light" style={{ height: '180px' }}>
         <TallyPanel />
         <ExecutionLog />

@@ -1,5 +1,14 @@
+import { useEffect, useState } from 'react';
 import { useAutomatorStore } from '@/stores/automator-store';
 import { ElementRow } from './ElementRow';
+import {
+  elapsedSec,
+  computeBackTimes,
+  overUnder,
+  formatDuration,
+  formatDelta,
+  formatClockTime,
+} from '@/lib/timing';
 
 const blockStatusStyles: Record<string, string> = {
   pending: 'border-l-od-text-dim',
@@ -9,14 +18,38 @@ const blockStatusStyles: Record<string, string> = {
 };
 
 export function RundownPanel() {
-  const { blocks, currentBlockIdx } = useAutomatorStore();
+  const { blocks, currentBlockIdx, blockStartedAt, blockTimings } = useAutomatorStore();
+  const [backTimes, setBackTimes] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const elapsed = elapsedSec(blockStartedAt);
+      setBackTimes(computeBackTimes(blocks, currentBlockIdx, elapsed));
+    }, 500);
+    return () => clearInterval(interval);
+  }, [blocks, currentBlockIdx, blockStartedAt]);
 
   return (
     <div className="h-full overflow-y-auto p-2">
       {blocks.map((block, idx) => {
         const isCurrent = idx === currentBlockIdx;
         const isPast = idx < currentBlockIdx;
+        const isFuture = idx > currentBlockIdx;
         const statusStyle = isCurrent ? 'border-l-od-tally-pgm bg-od-tally-pgm/10' : blockStatusStyles[block.status] || '';
+        const timing = blockTimings[block.id];
+        const bt = backTimes[block.id];
+
+        // Over/under badge for completed blocks
+        let ouBadge = null;
+        if (isPast && block.estimated_duration_sec > 0 && timing?.actualDurationSec != null) {
+          const delta = overUnder(block.estimated_duration_sec, timing.actualDurationSec);
+          const color = delta > 0 ? 'text-red-400 bg-red-400/10' : 'text-green-400 bg-green-400/10';
+          ouBadge = (
+            <span className={`text-[10px] font-mono font-bold px-1 rounded ${color}`}>
+              {formatDelta(delta)}
+            </span>
+          );
+        }
 
         return (
           <div
@@ -28,7 +61,7 @@ export function RundownPanel() {
               <span className="text-od-text-dim text-xs font-mono w-8">
                 {String(idx + 1).padStart(2, '0')}
               </span>
-              <span className={`font-medium text-sm ${isCurrent ? 'text-white' : 'text-od-text'}`}>
+              <span className={`font-medium text-sm flex-1 ${isCurrent ? 'text-white' : 'text-od-text'}`}>
                 {block.name}
               </span>
               {isCurrent && (
@@ -36,9 +69,16 @@ export function RundownPanel() {
                   CURRENT
                 </span>
               )}
+              {ouBadge}
               {block.estimated_duration_sec > 0 && (
-                <span className="text-od-text-dim text-xs ml-auto">
-                  {Math.floor(block.estimated_duration_sec / 60)}:{String(block.estimated_duration_sec % 60).padStart(2, '0')}
+                <span className="text-od-text-dim text-xs">
+                  {formatDuration(block.estimated_duration_sec)}
+                </span>
+              )}
+              {/* Back-time for future blocks */}
+              {isFuture && bt && (
+                <span className="text-od-accent text-xs font-mono font-medium">
+                  {formatClockTime(bt)}
                 </span>
               )}
             </div>

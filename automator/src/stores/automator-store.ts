@@ -1,6 +1,8 @@
 import { create } from 'zustand';
-import type { Show, ShowConfig, Block, LogEntry, TallyState, Action, MediaSyncState, GtTemplate } from '@/lib/types';
-import { fetchRundown, fetchShows, connectWebSocket, executeCue, connectVmix, syncMedia, getMediaSyncStatus, setMediaFolder as setMediaFolderApi } from '@/lib/tauri-api';
+import type { Show, ShowConfig, Block, LogEntry, TallyState, Action, MediaSyncState, GtTemplate, ClipPosition } from '@/lib/types';
+import { fetchRundown, fetchShows, connectWebSocket, executeCue, connectVmix, syncMedia, getMediaSyncStatus, setMediaFolder as setMediaFolderApi, loadCachedRundown, listenEvent, registerTimecodeTriggers, clearTimecodeTriggers, checkTimecodeTriggers, runPreflightCheck } from '@/lib/tauri-api';
+import type { PreflightCheck } from '@/lib/tauri-api';
+import type { BlockTiming } from '@/lib/timing';
 
 interface AutomatorState {
   // Connection
@@ -26,8 +28,24 @@ interface AutomatorState {
   selectedElementId: string | null;
   executionLog: LogEntry[];
 
+  // Timing
+  showStartedAt: string | null;
+  blockStartedAt: string | null;
+  blockTimings: Record<string, BlockTiming>;
+
+  // Clip Pool alternation
+  currentClipPool: 'a' | 'b';
+
   // Tally
   tally: TallyState;
+
+  // Clip position (from vMix ACTS)
+  clipPosition: ClipPosition | null;
+
+  // Preflight
+  preflightResults: PreflightCheck[] | null;
+  preflightLoading: boolean;
+  preflightError: string | null;
 
   // WS ref
   ws: WebSocket | null;
@@ -57,12 +75,19 @@ interface AutomatorState {
   prevBlock: (opts?: { fromRemote?: boolean }) => void;
   cueElement: (elementId: string) => Promise<void>;
   executeStep: (elementId: string, stepLabel: string) => Promise<void>;
+  registerTriggersForCurrentBlock: () => Promise<void>;
+  runPreflight: () => Promise<void>;
+  stopShow: () => Promise<void>;
+  resetShow: () => Promise<void>;
+  toggleRehearsal: () => Promise<void>;
+  panicCut: () => Promise<void>;
   addLog: (entry: LogEntry) => void;
   handleWsMessage: (msg: Record<string, unknown>) => void;
 }
 
 let seqCounter = 0;
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+let actsUnlisten: (() => void) | null = null;
 
 export const useAutomatorStore = create<AutomatorState>((set, get) => ({
   serverUrl: 'http://100.92.92.27:3000',
@@ -82,7 +107,15 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
   currentBlockIdx: 0,
   selectedElementId: null,
   executionLog: [],
+  showStartedAt: null,
+  blockStartedAt: null,
+  blockTimings: {},
+  currentClipPool: 'a',
   tally: { program: null, preview: null },
+  clipPosition: null,
+  preflightResults: null,
+  preflightLoading: false,
+  preflightError: null,
   ws: null,
   mediaFolder: 'C:\\OpenDirector\\Media',
   mediaSyncStatus: [],
@@ -170,6 +203,9 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
         currentBlockIdx: 0,
         selectedElementId: null,
         executionLog: [],
+        showStartedAt: null,
+        blockStartedAt: null,
+        blockTimings: {},
       });
 
       // Connect WebSocket
@@ -208,8 +244,39 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
 
       // Auto-trigger media sync
       get().triggerMediaSync();
+
+      // Register timecode triggers for initial block
+      get().registerTriggersForCurrentBlock();
     } catch (e) {
       console.error('Failed to connect to show:', e);
+      // Offline fallback: try loading from SQLite cache
+      try {
+        const cached = await loadCachedRundown(showId) as { show: Show; config: ShowConfig | null; blocks: Block[]; gt_templates: GtTemplate[]; _cached?: boolean } | null;
+        if (cached && cached.show) {
+          set({
+            show: cached.show,
+            config: cached.config,
+            blocks: cached.blocks,
+            gtTemplates: cached.gt_templates || [],
+            serverConnected: false, // Mark as offline
+            currentBlockIdx: 0,
+            selectedElementId: null,
+            executionLog: [],
+            showStartedAt: null,
+            blockStartedAt: null,
+            blockTimings: {},
+          });
+          get().addLog({
+            id: crypto.randomUUID(),
+            timestamp: new Date().toISOString(),
+            type: 'system',
+            result: 'ok',
+            message: 'Loaded from offline cache — server unreachable',
+          });
+        }
+      } catch (cacheErr) {
+        console.error('No cached data available:', cacheErr);
+      }
     }
   },
 
@@ -225,6 +292,19 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
         result: 'ok',
         message: `vMix connected at ${vmixHost}:${vmixPort}`,
       });
+
+      // Listen for ACTS (clip position) events from Tauri/vMix
+      if (actsUnlisten) actsUnlisten();
+      actsUnlisten = await listenEvent('vmix-acts', async (payload) => {
+        const update = payload as ClipPosition;
+        set({ clipPosition: update });
+
+        // Check timecode triggers
+        const fired = await checkTimecodeTriggers(update.positionMs, update.durationMs);
+        for (const elementId of fired) {
+          get().cueElement(elementId);
+        }
+      });
     } catch (e) {
       console.error('Failed to connect to vMix:', e);
       set({ vmixConnected: false });
@@ -237,6 +317,11 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       clearInterval(heartbeatInterval);
       heartbeatInterval = null;
     }
+    if (actsUnlisten) {
+      actsUnlisten();
+      actsUnlisten = null;
+    }
+    clearTimecodeTriggers().catch(() => {});
     if (ws) ws.close();
     set({
       show: null,
@@ -248,16 +333,114 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       ws: null,
       requestedElementId: null,
       processedKeys: new Set(),
+      showStartedAt: null,
+      blockStartedAt: null,
+      blockTimings: {},
+      clipPosition: null,
     });
   },
 
   selectElement: (elementId) => set({ selectedElementId: elementId }),
 
+  runPreflight: async () => {
+    const { config, gtTemplates, blocks, vmixConnected } = get();
+    if (!vmixConnected) {
+      set({ preflightError: 'vMix not connected', preflightResults: null, preflightLoading: false });
+      return;
+    }
+    set({ preflightLoading: true, preflightError: null });
+    try {
+      const elementInputKeys = new Set<string>();
+      for (const block of blocks) {
+        for (const el of block.elements) {
+          if (el.vmix_input_key) {
+            elementInputKeys.add(el.vmix_input_key);
+          }
+        }
+      }
+
+      const gtData = gtTemplates.map(gt => ({
+        name: gt.name,
+        vmix_input_key: gt.vmix_input_key,
+        fields: gt.fields.map((f: { name: string }) => f.name),
+      }));
+
+      const preflightConfig = config ? {
+        clip_pool_a_key: config.clip_pool_a_key || null,
+        clip_pool_b_key: config.clip_pool_b_key || null,
+        graphic_key: config.graphic_key || null,
+        lower_third_key: config.lower_third_key || null,
+      } : null;
+
+      const results = await runPreflightCheck({
+        config: preflightConfig,
+        gt_templates: gtData,
+        element_input_keys: Array.from(elementInputKeys),
+      });
+
+      set({ preflightResults: results, preflightLoading: false, preflightError: null });
+
+      const errorCount = results.filter(r => r.level === 'error').length;
+      const warnCount = results.filter(r => r.level === 'warning').length;
+      get().addLog({
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        type: 'system',
+        result: errorCount > 0 ? 'error' : 'ok',
+        message: `Pre-flight: ${results.length} checks — ${errorCount} errors, ${warnCount} warnings`,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      set({ preflightError: msg, preflightResults: null, preflightLoading: false });
+    }
+  },
+
+  registerTriggersForCurrentBlock: async () => {
+    const { blocks, currentBlockIdx } = get();
+    const block = blocks[currentBlockIdx];
+    if (!block) {
+      await clearTimecodeTriggers().catch(() => {});
+      return;
+    }
+
+    const triggers = block.elements
+      .filter(el => el.trigger_type === 'timecode' && el.trigger_config)
+      .map(el => ({
+        element_id: el.id,
+        trigger_config: JSON.stringify(el.trigger_config),
+        clip_duration_ms: (el.duration_sec || 0) * 1000,
+      }));
+
+    if (triggers.length > 0) {
+      await registerTimecodeTriggers(triggers).catch(e => {
+        console.error('Failed to register timecode triggers:', e);
+      });
+    } else {
+      await clearTimecodeTriggers().catch(() => {});
+    }
+  },
+
   nextBlock: (opts) => {
-    const { currentBlockIdx, blocks, ws, show } = get();
+    const { currentBlockIdx, blocks, ws, show, blockStartedAt, blockTimings } = get();
     if (currentBlockIdx < blocks.length - 1) {
+      const now = new Date().toISOString();
       const newIdx = currentBlockIdx + 1;
-      set({ currentBlockIdx: newIdx, selectedElementId: null });
+      const newTimings = { ...blockTimings };
+
+      // Finalize outgoing block timing
+      if (blockStartedAt) {
+        const actualSec = Math.floor((Date.now() - new Date(blockStartedAt).getTime()) / 1000);
+        newTimings[blocks[currentBlockIdx].id] = {
+          startedAt: blockStartedAt,
+          endedAt: now,
+          actualDurationSec: actualSec,
+        };
+      }
+
+      // Start new block timing
+      newTimings[blocks[newIdx].id] = { startedAt: now, endedAt: null, actualDurationSec: null };
+
+      set({ currentBlockIdx: newIdx, selectedElementId: null, blockStartedAt: now, blockTimings: newTimings });
 
       if (!opts?.fromRemote && ws && show) {
         ws.send(JSON.stringify({
@@ -281,14 +464,24 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
         result: 'ok',
         message: `→ ${blocks[newIdx].name}`,
       });
+
+      // Register timecode triggers for the new block
+      get().registerTriggersForCurrentBlock();
     }
   },
 
   prevBlock: (opts) => {
-    const { currentBlockIdx, blocks, ws, show } = get();
+    const { currentBlockIdx, blocks, ws, show, blockTimings } = get();
     if (currentBlockIdx > 0) {
+      const now = new Date().toISOString();
       const newIdx = currentBlockIdx - 1;
-      set({ currentBlockIdx: newIdx, selectedElementId: null });
+      const newTimings = { ...blockTimings };
+
+      // Revert previous block: clear its timing so it's back to "current"
+      delete newTimings[blocks[newIdx].id];
+      newTimings[blocks[newIdx].id] = { startedAt: now, endedAt: null, actualDurationSec: null };
+
+      set({ currentBlockIdx: newIdx, selectedElementId: null, blockStartedAt: now, blockTimings: newTimings });
 
       if (!opts?.fromRemote && ws && show) {
         ws.send(JSON.stringify({
@@ -311,11 +504,14 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
         result: 'ok',
         message: `← ${blocks[newIdx].name}`,
       });
+
+      // Register timecode triggers for the new block
+      get().registerTriggersForCurrentBlock();
     }
   },
 
   cueElement: async (elementId) => {
-    const { blocks, config, ws, gtTemplates } = get();
+    const { blocks, config, ws, gtTemplates, currentClipPool } = get();
     // Find element and its actions
     let element = null;
     let actions: Action[] = [];
@@ -347,7 +543,7 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       const gt = gtTemplates.find(t => t.id === element!.gt_template_id);
       if (gt) {
         const delayMs = config?.action_delay_ms || 50;
-        const gtActions = gt.fields.map((field, i) => ({
+        const gtActions: Array<{ id: string; phase: string; vmix_function: string; vmix_input: string; vmix_params: Record<string, string>; delay_ms: number }> = gt.fields.map((field, i) => ({
           id: `gt-set-${i}`,
           phase: 'on_cue',
           vmix_function: 'SetText',
@@ -422,12 +618,12 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
     const resolvedActions = actions.map(a => {
       const vmixParams: Record<string, string> = {};
       if (a.field) vmixParams['SelectedName'] = a.field;
-      if (a.value) vmixParams['Value'] = resolveVar(a.value, config) || '';
+      if (a.value) vmixParams['Value'] = resolveVar(a.value, config, currentClipPool) || '';
       return {
         id: a.id,
         phase: a.phase,
         vmix_function: a.vmix_function,
-        vmix_input: resolveVar(a.target, config),
+        vmix_input: resolveVar(a.target, config, currentClipPool),
         vmix_params: Object.keys(vmixParams).length > 0 ? vmixParams : null,
         delay_ms: a.delay_ms,
       };
@@ -439,6 +635,11 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       clip_pool_b_key: config.clip_pool_b_key,
     } : null;
     const result = await executeCue(elementId, resolvedActions, rustConfig);
+
+    // Toggle clip pool after cueing a clip element
+    if (element.type === 'clip') {
+      set({ currentClipPool: currentClipPool === 'a' ? 'b' : 'a' });
+    }
 
     // Send to WS
     if (ws) {
@@ -470,7 +671,7 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
   },
 
   executeStep: async (elementId, stepLabel) => {
-    const { blocks, config, ws } = get();
+    const { blocks, config, ws, currentClipPool } = get();
     let element = null;
     let actions: Action[] = [];
     for (const block of blocks) {
@@ -490,12 +691,12 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
     const resolvedActions = actions.map(a => {
       const vmixParams: Record<string, string> = {};
       if (a.field) vmixParams['SelectedName'] = a.field;
-      if (a.value) vmixParams['Value'] = resolveVar(a.value, config) || '';
+      if (a.value) vmixParams['Value'] = resolveVar(a.value, config, currentClipPool) || '';
       return {
         id: a.id,
         phase: a.phase,
         vmix_function: a.vmix_function,
-        vmix_input: resolveVar(a.target, config),
+        vmix_input: resolveVar(a.target, config, currentClipPool),
         vmix_params: Object.keys(vmixParams).length > 0 ? vmixParams : null,
         delay_ms: a.delay_ms,
       };
@@ -535,6 +736,130 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       result: result.ok ? 'ok' : 'error',
       latencyMs: result.latencyMs,
     });
+  },
+
+  stopShow: async () => {
+    const { show, serverUrl, ws } = get();
+    if (!show) return;
+    try {
+      const res = await fetch(`${serverUrl}/api/shows/${show.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'ready' }),
+      });
+      if (!res.ok) {
+        get().addLog({ id: crypto.randomUUID(), timestamp: new Date().toISOString(), type: 'system', result: 'error', message: `STOP failed: ${res.status}` });
+        return;
+      }
+      set({
+        showStartedAt: null,
+        blockStartedAt: null,
+        blockTimings: {},
+        currentBlockIdx: 0,
+        selectedElementId: null,
+        requestedElementId: null,
+      });
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          channel: 'execution',
+          type: 'show_status_changed',
+          timestamp: new Date().toISOString(),
+          payload: { status: 'ready', source: 'automator' },
+        }));
+      }
+      get().addLog({ id: crypto.randomUUID(), timestamp: new Date().toISOString(), type: 'system', result: 'ok', message: 'STOP — show set to ready' });
+    } catch (e) {
+      get().addLog({ id: crypto.randomUUID(), timestamp: new Date().toISOString(), type: 'system', result: 'error', message: `STOP error: ${e}` });
+    }
+  },
+
+  resetShow: async () => {
+    const { show, serverUrl, blocks } = get();
+    if (!show) return;
+    try {
+      // Set show to ready
+      await fetch(`${serverUrl}/api/shows/${show.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'ready' }),
+      });
+      // Reset all blocks to pending
+      await Promise.all(blocks.map(b =>
+        fetch(`${serverUrl}/api/shows/${show.id}/blocks/${b.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'pending', actual_duration_sec: null }),
+        })
+      ));
+      set({
+        currentBlockIdx: 0,
+        showStartedAt: null,
+        blockStartedAt: null,
+        blockTimings: {},
+        currentClipPool: 'a',
+        selectedElementId: null,
+        requestedElementId: null,
+      });
+      get().addLog({ id: crypto.randomUUID(), timestamp: new Date().toISOString(), type: 'system', result: 'ok', message: 'RESET — all blocks pending' });
+    } catch (e) {
+      get().addLog({ id: crypto.randomUUID(), timestamp: new Date().toISOString(), type: 'system', result: 'error', message: `RESET error: ${e}` });
+    }
+  },
+
+  toggleRehearsal: async () => {
+    const { show, serverUrl, ws } = get();
+    if (!show) return;
+    const newStatus = show.status === 'rehearsal' ? 'ready' : 'rehearsal';
+    try {
+      const res = await fetch(`${serverUrl}/api/shows/${show.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) {
+        get().addLog({ id: crypto.randomUUID(), timestamp: new Date().toISOString(), type: 'system', result: 'error', message: `Rehearsal toggle failed: ${res.status}` });
+        return;
+      }
+      if (newStatus === 'rehearsal') {
+        const now = new Date().toISOString();
+        set({ showStartedAt: now, blockStartedAt: now, blockTimings: {} });
+      } else {
+        set({ showStartedAt: null, blockStartedAt: null, blockTimings: {}, currentClipPool: 'a' });
+      }
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          channel: 'execution',
+          type: 'show_status_changed',
+          timestamp: new Date().toISOString(),
+          payload: { status: newStatus, source: 'automator' },
+        }));
+      }
+      get().addLog({ id: crypto.randomUUID(), timestamp: new Date().toISOString(), type: 'system', result: 'ok', message: newStatus === 'rehearsal' ? 'REHEARSAL started' : 'REHEARSAL ended' });
+    } catch (e) {
+      get().addLog({ id: crypto.randomUUID(), timestamp: new Date().toISOString(), type: 'system', result: 'error', message: `Rehearsal error: ${e}` });
+    }
+  },
+
+  panicCut: async () => {
+    const { config, vmixConnected } = get();
+    if (!vmixConnected || !config?.overrun_safe_input_key) {
+      get().addLog({ id: crypto.randomUUID(), timestamp: new Date().toISOString(), type: 'system', result: 'error', message: 'PANIC: No safe input configured or vMix disconnected' });
+      return;
+    }
+    try {
+      const { sendVmixCommand } = await import('@/lib/tauri-api');
+      const result = await sendVmixCommand('CutDirect', `Input=${config.overrun_safe_input_key}`);
+      get().addLog({
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        type: 'panic',
+        vmixFunction: 'CutDirect',
+        result: result.ok ? 'ok' : 'error',
+        message: `PANIC CUT to ${config.overrun_safe_input_key}`,
+      });
+    } catch (e) {
+      get().addLog({ id: crypto.randomUUID(), timestamp: new Date().toISOString(), type: 'panic', result: 'error', message: `PANIC error: ${e}` });
+    }
   },
 
   addLog: (entry) => {
@@ -628,6 +953,27 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
         return;
       }
 
+      // Show status changes — manage timing
+      if (type === 'show_status_changed') {
+        const status = payload?.status as string;
+        if (status === 'live' || status === 'rehearsal') {
+          const now = new Date().toISOString();
+          set({
+            showStartedAt: now,
+            blockStartedAt: now,
+            blockTimings: {},
+          });
+        }
+        if (status === 'ready') {
+          set({
+            showStartedAt: null,
+            blockStartedAt: null,
+            blockTimings: {},
+            currentClipPool: 'a',
+          });
+        }
+      }
+
       // Default: log other execution messages
       get().addLog({
         id: (msg.idempotencyKey as string) || crypto.randomUUID(),
@@ -665,10 +1011,11 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
   },
 }));
 
-function resolveVar(val: string | null, config: ShowConfig | null): string | null {
+function resolveVar(val: string | null, config: ShowConfig | null, currentPool: 'a' | 'b' = 'a'): string | null {
   if (!val || !config) return val;
+  const activePoolKey = currentPool === 'a' ? config.clip_pool_a_key : config.clip_pool_b_key;
   return val
-    .replace('{{clip_pool}}', config.clip_pool_a_key)
+    .replace('{{clip_pool}}', activePoolKey)
     .replace('{{clip_pool_a}}', config.clip_pool_a_key)
     .replace('{{clip_pool_b}}', config.clip_pool_b_key)
     .replace('{{graphic}}', config.graphic_key)

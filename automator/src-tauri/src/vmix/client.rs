@@ -4,6 +4,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 
+use super::acts;
 use super::tally;
 
 /// Result of a vMix command execution.
@@ -60,12 +61,21 @@ impl VmixClient {
         self.connected = true;
         self.host = format!("{}:{}", host, port);
 
-        // Subscribe to tally updates
+        // Subscribe to tally and ACTS updates
         {
             let mut w = writer.lock().await;
             w.write_all(b"SUBSCRIBE TALLY\r\n")
                 .await
                 .map_err(|e| format!("Failed to subscribe to tally: {}", e))?;
+            w.write_all(b"SUBSCRIBE ACTS\r\n")
+                .await
+                .map_err(|e| format!("Failed to subscribe to ACTS: {}", e))?;
+            w.write_all(b"SUBSCRIBE RECORDING\r\n")
+                .await
+                .map_err(|e| format!("Failed to subscribe to RECORDING: {}", e))?;
+            w.write_all(b"SUBSCRIBE STREAMING\r\n")
+                .await
+                .map_err(|e| format!("Failed to subscribe to STREAMING: {}", e))?;
         }
 
         // Spawn reader loop
@@ -91,6 +101,24 @@ impl VmixClient {
                             let tally_str = &trimmed["TALLY OK ".len()..];
                             let tally = tally::parse_tally(tally_str);
                             let _ = app.emit("vmix-tally", tally);
+                        }
+                        // Parse ACTS (activator/timecode) responses
+                        else if trimmed.starts_with("ACTS") {
+                            if let Some(update) = acts::parse_acts_line(trimmed) {
+                                let _ = app.emit("vmix-acts", update);
+                            }
+                        }
+                        // Parse RECORDING responses
+                        else if trimmed.starts_with("RECORDING OK ") {
+                            let val = &trimmed["RECORDING OK ".len()..];
+                            let is_recording = val.trim() == "1";
+                            let _ = app.emit("vmix-recording", is_recording);
+                        }
+                        // Parse STREAMING responses
+                        else if trimmed.starts_with("STREAMING OK ") {
+                            let val = &trimmed["STREAMING OK ".len()..];
+                            let is_streaming = val.trim() == "1";
+                            let _ = app.emit("vmix-streaming", is_streaming);
                         }
                         // Parse function responses
                         else if trimmed.starts_with("FUNCTION") {
@@ -138,6 +166,61 @@ impl VmixClient {
             message: format!("Sent: {}", cmd.trim()),
             latency_ms: latency,
         })
+    }
+
+    /// Fetch vMix XML state via a separate short-lived TCP connection.
+    /// Opens a new connection to the same host, sends "XML\r\n", reads until
+    /// "</vmix>", then closes. Avoids interfering with the main reader loop.
+    pub async fn fetch_xml(&self) -> Result<String, String> {
+        if !self.connected || self.host.is_empty() {
+            return Err("Not connected to vMix".to_string());
+        }
+
+        log::info!("Fetching XML state from vMix at {}", self.host);
+
+        let stream = TcpStream::connect(&self.host)
+            .await
+            .map_err(|e| format!("Failed to open XML connection to vMix: {}", e))?;
+
+        let (reader, mut writer) = tokio::io::split(stream);
+
+        writer
+            .write_all(b"XML\r\n")
+            .await
+            .map_err(|e| format!("Failed to send XML command: {}", e))?;
+
+        let mut buf_reader = BufReader::new(reader);
+        let mut xml = String::new();
+        let mut line = String::new();
+
+        loop {
+            line.clear();
+            match tokio::time::timeout(
+                tokio::time::Duration::from_secs(5),
+                buf_reader.read_line(&mut line),
+            )
+            .await
+            {
+                Ok(Ok(0)) => return Err("Connection closed while reading XML".to_string()),
+                Ok(Ok(_)) => {
+                    xml.push_str(&line);
+                    if xml.contains("</vmix>") {
+                        break;
+                    }
+                }
+                Ok(Err(e)) => return Err(format!("Error reading XML: {}", e)),
+                Err(_) => return Err("Timeout waiting for vMix XML response".to_string()),
+            }
+        }
+
+        // Strip anything before <vmix>
+        if let Some(start) = xml.find("<vmix>") {
+            xml = xml[start..].to_string();
+        }
+
+        let _ = writer.shutdown().await;
+        log::info!("Fetched vMix XML ({} bytes)", xml.len());
+        Ok(xml)
     }
 
     /// Disconnect from vMix.

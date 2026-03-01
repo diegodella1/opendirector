@@ -44,7 +44,7 @@ export function isEditableInLive(
   field: string
 ): boolean {
   if (entityType === 'block') {
-    return field === 'script' || field === 'notes';
+    return field === 'script' || field === 'notes' || field === 'status' || field === 'actual_duration_sec';
   }
   if (entityType === 'element') {
     return field === 'title' || field === 'subtitle' || field === 'gt_field_values';

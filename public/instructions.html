@@ -949,7 +949,7 @@
       </li>
       <li>
         <strong>Action chain execution</strong>
-        Runs the element's action chain in order, respecting delays between steps. A mutex ensures only one command executes at a time (5s timeout).
+        Runs the element's action chain in order, respecting delays between steps. Each vMix function is automatically routed to a dedicated TCP channel (Transitions, Graphics, Audio, or State), so concurrent operations (e.g., PANIC during a cue) don't block each other.
       </li>
       <li>
         <strong>State update + notification</strong>
@@ -972,15 +972,17 @@
     <p>The Automator alternates between two clip inputs (Pool A and Pool B) for seamless playback. While one clip plays on air, the next clip is pre-loaded into the inactive pool. This enables smooth transitions without loading delays.</p>
 
     <h3>vMix TCP Connection Pool</h3>
+    <p>The Automator opens <strong>4 dedicated TCP connections</strong> to vMix, each handling a different category of commands. This eliminates contention &mdash; a PANIC (F12) always goes through the Transitions channel without waiting for a graphics cue to finish.</p>
     <div class="card">
       <table>
-        <tr><th>Connection</th><th>Functions</th><th>Priority</th></tr>
-        <tr><td>Conn 1: Transitions</td><td>CutDirect, Cut, Fade, FadeToBlack, Stinger</td><td>Highest</td></tr>
-        <tr><td>Conn 2: Graphics</td><td>SetText, SetImage, OverlayInput In/Out</td><td>High</td></tr>
-        <tr><td>Conn 3: Audio</td><td>AudioOn, AudioOff, SetVolume, SetBusVolume</td><td>Medium</td></tr>
-        <tr><td>Conn 4: State</td><td>SUBSCRIBE TALLY, SUBSCRIBE ACTS (read-only)</td><td>Monitoring</td></tr>
+        <tr><th>Channel</th><th>Functions</th><th>Priority</th><th>SUBSCRIBE</th></tr>
+        <tr><td><strong>Transitions</strong></td><td>CutDirect, Cut, Fade, FadeToBlack, Stinger*, Merge, Wipe, Zoom, Fly</td><td>Highest</td><td>&mdash;</td></tr>
+        <tr><td><strong>Graphics</strong></td><td>OverlayInput*, SetText*, SetImage*, SelectTitlePreset*, SetColor, SetCountdown, TitleBeginAnimation, DataSource*</td><td>High</td><td>&mdash;</td></tr>
+        <tr><td><strong>Audio</strong></td><td>AudioOn/Off, AudioBus*, SetVolume*, SetBalance, Solo*, BusX*, MasterAudio*</td><td>Medium</td><td>&mdash;</td></tr>
+        <tr><td><strong>State</strong></td><td>Play, Pause, Restart, Loop, and everything else (fallback)</td><td>Normal</td><td>TALLY, ACTS, RECORDING, STREAMING</td></tr>
       </table>
     </div>
+    <p>If a channel drops, commands automatically fall back to any other connected channel. The XML pre-flight check uses a separate short-lived connection.</p>
   </section>
 
   <!-- SIGNALS -->

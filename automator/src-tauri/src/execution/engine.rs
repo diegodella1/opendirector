@@ -1,9 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
-use crate::vmix::client::VmixClient;
+use crate::vmix::pool::VmixPool;
 
 /// An action from the rundown.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -73,7 +72,7 @@ pub fn resolve_variables(input: &str, config: &ShowConfig) -> String {
 pub async fn execute_actions(
     actions: &[Action],
     config: &ShowConfig,
-    vmix: &Arc<Mutex<VmixClient>>,
+    vmix: &Arc<VmixPool>,
 ) -> Vec<ActionResult> {
     let mut results = Vec::new();
 
@@ -120,9 +119,8 @@ pub async fn execute_actions(
 
         let params_str = params_parts.join("&");
 
-        // Send to vMix
-        let client = vmix.lock().await;
-        match client.send_command(&vmix_function, &params_str).await {
+        // Send to vMix (auto-classifies to the right channel)
+        match vmix.send_command(&vmix_function, &params_str).await {
             Ok(vmix_result) => {
                 results.push(ActionResult {
                     action_id: action.id.clone(),
@@ -151,7 +149,7 @@ pub async fn execute_actions(
 pub async fn execute_cue(
     actions: &[Action],
     config: &ShowConfig,
-    vmix: &Arc<Mutex<VmixClient>>,
+    vmix: &Arc<VmixPool>,
 ) -> Vec<ActionResult> {
     let cue_actions: Vec<Action> = actions
         .iter()
@@ -167,7 +165,7 @@ pub async fn execute_step(
     actions: &[Action],
     step_label: &str,
     config: &ShowConfig,
-    vmix: &Arc<Mutex<VmixClient>>,
+    vmix: &Arc<VmixPool>,
 ) -> Vec<ActionResult> {
     let step_actions: Vec<Action> = actions
         .iter()

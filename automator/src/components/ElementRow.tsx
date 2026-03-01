@@ -22,7 +22,7 @@ interface Props {
 }
 
 export function ElementRow({ element }: Props) {
-  const { selectedElementId, selectElement, cueElement, executeStep, requestedElementId, clearRequestedElement } = useAutomatorStore();
+  const { selectedElementId, selectElement, cueElement, executeStep, requestedElementId, clearRequestedElement, clipPosition } = useAutomatorStore();
   const isSelected = selectedElementId === element.id;
   const isRequested = requestedElementId === element.id;
   const typeInfo = typeStyles[element.type] || { label: '?', bg: 'bg-gray-500' };
@@ -30,10 +30,33 @@ export function ElementRow({ element }: Props) {
   const cueActions = element.actions.filter(a => a.phase === 'on_cue');
   const stepActions = element.actions.filter(a => a.phase === 'step');
 
+  // Clip progress: show when this element's vMix input matches the currently playing clip
+  const isClipPlaying = element.type === 'clip'
+    && clipPosition
+    && element.vmix_input_key
+    && clipPosition.inputKey === element.vmix_input_key
+    && clipPosition.durationMs > 0;
+
+  const clipProgress = isClipPlaying
+    ? Math.min(clipPosition.positionMs / clipPosition.durationMs, 1)
+    : 0;
+
+  // Timecode trigger marker position (as fraction 0-1)
+  const triggerMarker = (() => {
+    if (!isClipPlaying || element.trigger_type !== 'timecode' || !element.trigger_config) return null;
+    const at = element.trigger_config.at;
+    if (at == null) return null;
+    const atMs = typeof at === 'string' ? parseInt(at, 10) : Number(at);
+    if (isNaN(atMs)) return null;
+    const dur = clipPosition.durationMs;
+    const absMs = atMs >= 0 ? atMs : Math.max(0, dur + atMs);
+    return Math.min(absMs / dur, 1);
+  })();
+
   return (
     <div
       onClick={() => selectElement(element.id)}
-      className={`flex items-center gap-2 px-2 py-1.5 rounded mt-1 cursor-pointer transition-colors ${
+      className={`relative flex items-center gap-2 px-2 py-1.5 rounded mt-1 cursor-pointer transition-colors ${
         isRequested
           ? 'bg-yellow-600/20 ring-1 ring-yellow-400 animate-pulse'
           : isSelected
@@ -41,6 +64,24 @@ export function ElementRow({ element }: Props) {
           : 'hover:bg-od-surface-light/50'
       }`}
     >
+      {/* Clip progress bar (thin, at the bottom of the row) */}
+      {isClipPlaying && (
+        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-od-surface-light/30 rounded-b overflow-hidden">
+          <div
+            className="h-full bg-purple-500 transition-[width] duration-200 ease-linear"
+            style={{ width: `${clipProgress * 100}%` }}
+          />
+          {/* Timecode trigger marker */}
+          {triggerMarker !== null && (
+            <div
+              className="absolute top-0 h-full w-[2px] bg-yellow-400"
+              style={{ left: `${triggerMarker * 100}%` }}
+              title={`Trigger at ${Math.round((triggerMarker * clipPosition.durationMs) / 1000)}s`}
+            />
+          )}
+        </div>
+      )}
+
       {/* Type badge */}
       <span className={`${typeInfo.bg} text-white text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0`}>
         {typeInfo.label}
@@ -51,12 +92,16 @@ export function ElementRow({ element }: Props) {
         {element.title || 'Untitled'}
       </span>
 
-      {/* Duration */}
-      {element.duration_sec && (
+      {/* Duration / clip position */}
+      {isClipPlaying ? (
+        <span className="text-purple-400 text-xs font-mono shrink-0">
+          {formatMs(clipPosition.positionMs)}/{formatMs(clipPosition.durationMs)}
+        </span>
+      ) : element.duration_sec ? (
         <span className="text-od-text-dim text-xs font-mono shrink-0">
           {element.duration_sec}s
         </span>
-      )}
+      ) : null}
 
       {/* CUE button */}
       {cueActions.length > 0 && (
@@ -97,4 +142,12 @@ export function ElementRow({ element }: Props) {
       ))}
     </div>
   );
+}
+
+/** Format milliseconds as MM:SS */
+function formatMs(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }

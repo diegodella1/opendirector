@@ -1,10 +1,14 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Show, Block, Element, GtTemplate } from '@/lib/types';
+import type { Show, Block, Element, Action, GtTemplate } from '@/lib/types';
+
+interface ElementWithActions extends Element {
+  actions: Action[];
+}
 
 interface BlockWithElements extends Block {
-  elements: Element[];
+  elements: ElementWithActions[];
 }
 
 interface RedoEntry {
@@ -19,6 +23,7 @@ interface RundownState {
   blocks: BlockWithElements[];
   gtTemplates: GtTemplate[];
   selectedBlockId: string | null;
+  selectedElementId: string | null;
 
   // Undo/Redo
   redoStack: RedoEntry[];
@@ -37,9 +42,14 @@ interface RundownState {
   deleteElement: (showId: string, blockId: string, elementId: string) => Promise<void>;
   reorderBlocks: (showId: string, order: string[]) => Promise<void>;
   reorderElements: (showId: string, blockId: string, order: string[]) => Promise<void>;
+  addAction: (showId: string, blockId: string, elementId: string, action: Partial<Action>) => Promise<void>;
+  updateAction: (showId: string, blockId: string, elementId: string, actionId: string, changes: Partial<Action>) => Promise<void>;
+  deleteAction: (showId: string, blockId: string, elementId: string, actionId: string) => Promise<void>;
+  reorderActions: (showId: string, blockId: string, elementId: string, order: string[]) => Promise<void>;
   undo: (showId: string) => Promise<void>;
   redo: (showId: string) => Promise<void>;
   selectBlock: (blockId: string | null) => void;
+  selectElement: (elementId: string | null) => void;
   connectWs: (showId: string) => void;
   disconnectWs: () => void;
 }
@@ -49,6 +59,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
   blocks: [],
   gtTemplates: [],
   selectedBlockId: null,
+  selectedElementId: null,
   redoStack: [],
   ws: null,
   wsConnected: false,
@@ -114,7 +125,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
     set((state) => ({
       blocks: state.blocks.map((b) =>
         b.id === blockId
-          ? { ...b, elements: [...b.elements, newElement] }
+          ? { ...b, elements: [...b.elements, { ...newElement, actions: newElement.actions || [] }] }
           : b
       ),
     }));
@@ -192,7 +203,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
             const el = elMap.get(id);
             return el ? { ...el, position: idx } : null;
           })
-          .filter(Boolean) as Element[];
+          .filter(Boolean) as ElementWithActions[];
         return { ...b, elements: reordered };
       }),
     }));
@@ -201,6 +212,115 @@ export const useRundownStore = create<RundownState>((set, get) => ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ order }),
     });
+  },
+
+  addAction: async (showId, blockId, elementId, action) => {
+    const res = await fetch(
+      `/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(action),
+      }
+    );
+    if (!res.ok) return;
+    const newAction = await res.json();
+    set((state) => ({
+      blocks: state.blocks.map((b) =>
+        b.id === blockId
+          ? {
+              ...b,
+              elements: b.elements.map((e) =>
+                e.id === elementId
+                  ? { ...e, actions: [...e.actions, newAction] }
+                  : e
+              ),
+            }
+          : b
+      ),
+    }));
+  },
+
+  updateAction: async (showId, blockId, elementId, actionId, changes) => {
+    const res = await fetch(
+      `/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions/${actionId}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(changes),
+      }
+    );
+    if (!res.ok) return;
+    const updated = await res.json();
+    set((state) => ({
+      blocks: state.blocks.map((b) =>
+        b.id === blockId
+          ? {
+              ...b,
+              elements: b.elements.map((e) =>
+                e.id === elementId
+                  ? { ...e, actions: e.actions.map((a) => a.id === actionId ? { ...a, ...updated } : a) }
+                  : e
+              ),
+            }
+          : b
+      ),
+    }));
+  },
+
+  deleteAction: async (showId, blockId, elementId, actionId) => {
+    const res = await fetch(
+      `/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions/${actionId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+    if (!res.ok) return;
+    set((state) => ({
+      blocks: state.blocks.map((b) =>
+        b.id === blockId
+          ? {
+              ...b,
+              elements: b.elements.map((e) =>
+                e.id === elementId
+                  ? { ...e, actions: e.actions.filter((a) => a.id !== actionId) }
+                  : e
+              ),
+            }
+          : b
+      ),
+    }));
+  },
+
+  reorderActions: async (showId, blockId, elementId, order) => {
+    set((state) => ({
+      blocks: state.blocks.map((b) =>
+        b.id === blockId
+          ? {
+              ...b,
+              elements: b.elements.map((e) => {
+                if (e.id !== elementId) return e;
+                const actionMap = new Map(e.actions.map((a) => [a.id, a]));
+                const reordered = order
+                  .map((id, idx) => {
+                    const act = actionMap.get(id);
+                    return act ? { ...act, position: idx } : null;
+                  })
+                  .filter(Boolean) as Action[];
+                return { ...e, actions: reordered };
+              }),
+            }
+          : b
+      ),
+    }));
+    await fetch(
+      `/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions/reorder`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order }),
+      }
+    );
   },
 
   undo: async (showId) => {
@@ -233,7 +353,9 @@ export const useRundownStore = create<RundownState>((set, get) => ({
     get().loadRundown(showId);
   },
 
-  selectBlock: (blockId) => set({ selectedBlockId: blockId }),
+  selectBlock: (blockId) => set({ selectedBlockId: blockId, selectedElementId: null }),
+
+  selectElement: (elementId) => set({ selectedElementId: elementId }),
 
   connectWs: (showId) => {
     const { ws: existingWs } = get();
@@ -285,7 +407,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
             set((state) => ({
               blocks: state.blocks.map((b) =>
                 b.id === msg.payload.element.block_id
-                  ? { ...b, elements: [...b.elements, msg.payload.element] }
+                  ? { ...b, elements: [...b.elements, { ...msg.payload.element, actions: msg.payload.element.actions || [] }] }
                   : b
               ),
             }));
@@ -339,6 +461,62 @@ export const useRundownStore = create<RundownState>((set, get) => ({
                   .filter(Boolean);
                 return { ...b, elements: reordered };
               }),
+            }));
+            break;
+          }
+          case 'action_created':
+            set((state) => ({
+              blocks: state.blocks.map((b) => ({
+                ...b,
+                elements: b.elements.map((e) =>
+                  e.id === msg.payload.action.element_id
+                    ? { ...e, actions: [...e.actions.filter(a => a.id !== msg.payload.action.id), msg.payload.action] }
+                    : e
+                ),
+              })),
+            }));
+            break;
+          case 'action_updated':
+            set((state) => ({
+              blocks: state.blocks.map((b) => ({
+                ...b,
+                elements: b.elements.map((e) => ({
+                  ...e,
+                  actions: e.actions.map((a) =>
+                    a.id === msg.payload.actionId ? { ...a, ...msg.payload.changes } : a
+                  ),
+                })),
+              })),
+            }));
+            break;
+          case 'action_deleted':
+            set((state) => ({
+              blocks: state.blocks.map((b) => ({
+                ...b,
+                elements: b.elements.map((e) => ({
+                  ...e,
+                  actions: e.actions.filter((a) => a.id !== msg.payload.actionId),
+                })),
+              })),
+            }));
+            break;
+          case 'actions_reordered': {
+            const { elementId: reorderElId, order: actOrder } = msg.payload;
+            set((state) => ({
+              blocks: state.blocks.map((b) => ({
+                ...b,
+                elements: b.elements.map((e) => {
+                  if (e.id !== reorderElId) return e;
+                  const actMap = new Map(e.actions.map((a) => [a.id, a]));
+                  const reordered = actOrder
+                    .map((id: string, idx: number) => {
+                      const act = actMap.get(id);
+                      return act ? { ...act, position: idx } : null;
+                    })
+                    .filter(Boolean);
+                  return { ...e, actions: reordered };
+                }),
+              })),
             }));
             break;
           }

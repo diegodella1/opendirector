@@ -122,11 +122,11 @@ export async function executeCue(
 // Send raw vMix command (Tauri only)
 export async function sendVmixCommand(
   func: string,
-  params: Record<string, string>
+  params: string
 ): Promise<{ ok: boolean; response: string }> {
   const invoke = await getInvoke();
   if (invoke) {
-    return invoke('send_vmix_command', { function: func, params }) as Promise<{ ok: boolean; response: string }>;
+    return invoke('send_vmix_command', { args: { function: func, params } }) as Promise<{ ok: boolean; response: string }>;
   }
   console.log(`[MOCK] vMix: FUNCTION ${func}`, params);
   return { ok: true, response: `FUNCTION OK ${func}` };
@@ -163,6 +163,16 @@ export async function getMediaSyncStatus(): Promise<unknown[]> {
   return [];
 }
 
+// Load cached rundown from SQLite (offline fallback)
+export async function loadCachedRundown(showId?: string): Promise<unknown> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    return invoke('load_cached_rundown', { showId: showId ?? null });
+  }
+  console.log('[MOCK] load_cached_rundown');
+  return null;
+}
+
 export async function setMediaFolder(folder: string): Promise<void> {
   const invoke = await getInvoke();
   if (invoke) {
@@ -170,4 +180,69 @@ export async function setMediaFolder(folder: string): Promise<void> {
     return;
   }
   console.log(`[MOCK] set_media_folder: ${folder}`);
+}
+
+// Pre-flight check types and API
+export interface PreflightCheck {
+  key: string;
+  description: string;
+  level: 'ok' | 'warning' | 'error';
+  suggestion: string;
+}
+
+export async function runPreflightCheck(args: {
+  config: {
+    clip_pool_a_key: string | null;
+    clip_pool_b_key: string | null;
+    graphic_key: string | null;
+    lower_third_key: string | null;
+  } | null;
+  gt_templates: Array<{ name: string; vmix_input_key: string; fields: string[] }>;
+  element_input_keys: string[];
+}): Promise<PreflightCheck[]> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    return invoke('run_preflight_check', { args }) as Promise<PreflightCheck[]>;
+  }
+  console.log('[MOCK] run_preflight_check:', args);
+  return [{ key: 'mock', description: 'Mock check', level: 'ok', suggestion: '' }];
+}
+
+// Timecode trigger commands
+export async function registerTimecodeTriggers(
+  triggers: Array<{
+    element_id: string;
+    trigger_config: string;
+    clip_duration_ms: number;
+  }>
+): Promise<number> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    return invoke('register_timecode_triggers', { triggers }) as Promise<number>;
+  }
+  console.log(`[MOCK] register_timecode_triggers:`, triggers);
+  return triggers.length;
+}
+
+export async function clearTimecodeTriggers(): Promise<void> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    await invoke('clear_timecode_triggers');
+    return;
+  }
+  console.log('[MOCK] clear_timecode_triggers');
+}
+
+export async function checkTimecodeTriggers(
+  positionMs: number,
+  durationMs: number
+): Promise<string[]> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    return invoke('check_timecode_triggers', {
+      position_ms: positionMs,
+      duration_ms: durationMs,
+    }) as Promise<string[]>;
+  }
+  return [];
 }

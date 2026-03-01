@@ -20,9 +20,11 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Element, GtTemplate } from '@/lib/types';
+import type { Block, Element, Action, GtTemplate } from '@/lib/types';
 import MediaBrowser from '@/components/MediaBrowser';
 import GtTemplateManager from '@/components/GtTemplateManager';
+import InspectorPanel from '@/components/InspectorPanel';
+import PeoplePanel from '@/components/PeoplePanel';
 
 // Element type icons/labels
 const elementTypeLabels: Record<string, { label: string; color: string }> = {
@@ -129,12 +131,16 @@ function SortableElement({
   el,
   gtTemplates,
   isLive,
+  isSelected,
+  onSelect,
   onDelete,
   onUpdate,
 }: {
   el: Element;
   gtTemplates: GtTemplate[];
   isLive: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
   onDelete: () => void;
   onUpdate: (changes: Partial<Element>) => void;
 }) {
@@ -157,7 +163,10 @@ function SortableElement({
     <div
       ref={setNodeRef}
       style={style}
-      className="p-3 bg-od-surface border border-od-surface-light rounded-lg"
+      onClick={onSelect}
+      className={`p-3 bg-od-surface border rounded-lg cursor-pointer transition-colors ${
+        isSelected ? 'border-od-accent bg-od-accent/10' : 'border-od-surface-light hover:border-od-accent/30'
+      }`}
     >
       <div className="flex items-center gap-3">
         {!isLive && (
@@ -248,6 +257,7 @@ export default function EditorPage() {
     blocks,
     gtTemplates,
     selectedBlockId,
+    selectedElementId,
     wsConnected,
     loadRundown,
     addBlock,
@@ -261,6 +271,7 @@ export default function EditorPage() {
     undo,
     redo,
     selectBlock,
+    selectElement,
     connectWs,
     disconnectWs,
   } = useRundownStore();
@@ -586,6 +597,8 @@ export default function EditorPage() {
                             el={el}
                             gtTemplates={gtTemplates}
                             isLive={isLive}
+                            isSelected={selectedElementId === el.id}
+                            onSelect={() => selectElement(el.id)}
                             onDelete={() => deleteElement(showId, selectedBlock.id, el.id)}
                             onUpdate={(changes) => updateElement(showId, selectedBlock.id, el.id, changes)}
                           />
@@ -605,6 +618,11 @@ export default function EditorPage() {
                   onUpdated={() => loadRundown(showId)}
                   onDeleted={() => loadRundown(showId)}
                 />
+              </div>
+
+              {/* People Section */}
+              <div className="mt-6">
+                <PeoplePanel showId={showId} />
               </div>
 
               {/* Media Section */}
@@ -627,6 +645,15 @@ export default function EditorPage() {
             </div>
           )}
         </div>
+
+        {/* Right Panel — Inspector */}
+        {selectedBlock && (
+          <InspectorPanel
+            showId={showId}
+            block={selectedBlock as Block & { elements: (Element & { actions: Action[] })[] }}
+            isLive={isLive}
+          />
+        )}
       </div>
     </div>
   );

@@ -5,6 +5,17 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLiveStore } from '@/stores/live-store';
 import SignalPanel from '@/components/SignalPanel';
+import {
+  elapsedSec,
+  blockRemaining,
+  showRemaining,
+  computeBackTimes,
+  overUnder,
+  formatDuration as fmtDur,
+  formatDelta,
+  timerColor,
+  formatClockTime,
+} from '@/lib/timing';
 
 // Element type labels/colors
 const elementTypeLabels: Record<string, { label: string; color: string }> = {
@@ -15,22 +26,13 @@ const elementTypeLabels: Record<string, { label: string; color: string }> = {
   note: { label: 'NOTE', color: 'bg-gray-500' },
 };
 
-function formatDuration(startIso: string | null): string {
+function formatElapsed(startIso: string | null): string {
   if (!startIso) return '00:00:00';
-  const elapsed = Math.floor((Date.now() - new Date(startIso).getTime()) / 1000);
-  const h = Math.floor(elapsed / 3600);
-  const m = Math.floor((elapsed % 3600) / 60);
-  const s = elapsed % 60;
+  const sec = elapsedSec(startIso);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-function getBlockTimerColor(blockStartedAt: string | null, estimatedSec: number): string {
-  if (!blockStartedAt || estimatedSec <= 0) return 'text-white';
-  const elapsed = (Date.now() - new Date(blockStartedAt).getTime()) / 1000;
-  const ratio = elapsed / estimatedSec;
-  if (ratio > 1) return 'text-red-400';
-  if (ratio > 0.8) return 'text-yellow-400';
-  return 'text-green-400';
 }
 
 export default function LivePage() {
@@ -44,6 +46,7 @@ export default function LivePage() {
     currentBlockId,
     showStartedAt,
     blockStartedAt,
+    blockTimings,
     executionLog,
     tally,
     triggeredElements,
@@ -66,9 +69,14 @@ export default function LivePage() {
   } = useLiveStore();
 
   const [showTimer, setShowTimer] = useState('00:00:00');
-  const [blockTimer, setBlockTimer] = useState('00:00:00');
-  const [blockTimerColor, setBlockTimerColor] = useState('text-white');
+  const [blockElapsedStr, setBlockElapsedStr] = useState('00:00');
+  const [blockRemainingStr, setBlockRemainingStr] = useState('00:00');
+  const [blockRemainingColor, setBlockRemainingColor] = useState('text-white');
+  const [showRemainingStr, setShowRemainingStr] = useState('00:00');
+  const [backTimes, setBackTimes] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
+  // Force re-render every second
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     loadShow(showId);
@@ -76,18 +84,33 @@ export default function LivePage() {
     return () => disconnectWs();
   }, [showId, loadShow, connectWs, disconnectWs]);
 
+  const currentBlock = blocks.find((b) => b.id === currentBlockId);
+  const currentBlockIdx = blocks.findIndex((b) => b.id === currentBlockId);
+
   // Timer update
   useEffect(() => {
     const interval = setInterval(() => {
-      setShowTimer(formatDuration(showStartedAt));
-      setBlockTimer(formatDuration(blockStartedAt));
-      const currentBlock = blocks.find((b) => b.id === currentBlockId);
-      setBlockTimerColor(
-        getBlockTimerColor(blockStartedAt, currentBlock?.estimated_duration_sec || 0)
-      );
-    }, 1000);
+      setTick((t) => t + 1);
+      setShowTimer(formatElapsed(showStartedAt));
+
+      const elapsed = elapsedSec(blockStartedAt);
+      const est = currentBlock?.estimated_duration_sec || 0;
+      const remaining = blockRemaining(est, elapsed);
+
+      setBlockElapsedStr(fmtDur(elapsed));
+      if (est > 0) {
+        setBlockRemainingStr(remaining < 0 ? formatDelta(Math.abs(remaining) * -1) : fmtDur(remaining));
+        setBlockRemainingColor(timerColor(remaining, est));
+      } else {
+        setBlockRemainingStr(fmtDur(elapsed));
+        setBlockRemainingColor('text-white');
+      }
+
+      setShowRemainingStr(fmtDur(showRemaining(blocks, currentBlockIdx, elapsed)));
+      setBackTimes(computeBackTimes(blocks, currentBlockIdx, elapsed));
+    }, 250);
     return () => clearInterval(interval);
-  }, [showStartedAt, blockStartedAt, blocks, currentBlockId]);
+  }, [showStartedAt, blockStartedAt, blocks, currentBlockIdx, currentBlock]);
 
   // Track execution errors
   useEffect(() => {
@@ -112,21 +135,17 @@ export default function LivePage() {
 
   // Cue next pending element in current block
   const cueNextPending = useCallback(() => {
-    const currentBlock = blocks.find((b) => b.id === currentBlockId);
-    if (!currentBlock) return;
-    const next = currentBlock.elements.find(
+    const cb = blocks.find((b) => b.id === currentBlockId);
+    if (!cb) return;
+    const next = cb.elements.find(
       (el) => el.type !== 'note' && !triggeredElements.has(el.id)
     );
     if (next) cueElement(next.id);
   }, [blocks, currentBlockId, triggeredElements, cueElement]);
 
-  const currentBlock = blocks.find((b) => b.id === currentBlockId);
-  const currentBlockIdx = blocks.findIndex((b) => b.id === currentBlockId);
-
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't capture when typing in inputs
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       switch (e.key) {
@@ -183,13 +202,24 @@ export default function LivePage() {
           </span>
         </div>
         <div className="flex items-center gap-4">
+          {/* Show elapsed */}
           <div className="text-right">
             <div className="text-od-text-dim text-[10px] uppercase">Show</div>
             <div className="text-white font-mono text-lg">{showTimer}</div>
           </div>
+          {/* Block elapsed + remaining */}
           <div className="text-right">
             <div className="text-od-text-dim text-[10px] uppercase">Block</div>
-            <div className={`font-mono text-lg ${blockTimerColor}`}>{blockTimer}</div>
+            <div className="text-white font-mono text-sm">{blockElapsedStr}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-od-text-dim text-[10px] uppercase">Remaining</div>
+            <div className={`font-mono text-lg font-bold ${blockRemainingColor}`}>{blockRemainingStr}</div>
+          </div>
+          {/* Show remaining */}
+          <div className="text-right">
+            <div className="text-od-text-dim text-[10px] uppercase">Show Left</div>
+            <div className="text-od-text font-mono text-sm">{showRemainingStr}</div>
           </div>
           <span className={`text-xs px-2 py-0.5 rounded ${wsConnected ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'}`}>
             {wsConnected ? 'Connected' : 'Disconnected'}
@@ -230,38 +260,69 @@ export default function LivePage() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {blocks.map((block, idx) => (
-              <div
-                key={block.id}
-                onClick={() => setCurrentBlock(block.id)}
-                className={`p-2 border-b border-od-surface-light cursor-pointer transition-colors text-sm ${
-                  block.id === currentBlockId
-                    ? 'bg-od-accent/20 border-l-2 border-l-od-accent'
-                    : idx < currentBlockIdx
-                    ? 'opacity-40'
-                    : 'hover:bg-od-surface/50'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-od-text-dim text-xs font-mono w-5">
-                    {String(idx + 1).padStart(2, '0')}
-                  </span>
-                  <span className={`text-white font-medium truncate ${
-                    block.id === currentBlockId ? 'text-od-accent' : ''
-                  }`}>
-                    {block.name}
-                  </span>
-                </div>
-                {block.elements.length > 0 && (
-                  <div className="text-od-text-dim text-xs ml-7 mt-0.5">
-                    {block.elements.length} element{block.elements.length !== 1 ? 's' : ''}
+            {blocks.map((block, idx) => {
+              const isDone = block.status === 'done' || (blockTimings[block.id]?.endedAt != null);
+              const isCurrent = block.id === currentBlockId;
+              const isFuture = idx > currentBlockIdx;
+              const bt = backTimes[block.id];
+
+              // Over/under for completed blocks
+              let ouBadge = null;
+              if (isDone && block.estimated_duration_sec > 0) {
+                const actual = block.actual_duration_sec ?? blockTimings[block.id]?.actualDurationSec;
+                if (actual != null) {
+                  const delta = overUnder(block.estimated_duration_sec, actual);
+                  const color = delta > 0 ? 'text-red-400 bg-red-400/10' : 'text-green-400 bg-green-400/10';
+                  ouBadge = (
+                    <span className={`text-[10px] font-mono font-bold px-1 rounded ${color}`}>
+                      {formatDelta(delta)}
+                    </span>
+                  );
+                }
+              }
+
+              return (
+                <div
+                  key={block.id}
+                  onClick={() => setCurrentBlock(block.id)}
+                  className={`p-2 border-b border-od-surface-light cursor-pointer transition-colors text-sm ${
+                    isCurrent
+                      ? 'bg-od-accent/20 border-l-2 border-l-od-accent'
+                      : isDone
+                      ? 'opacity-50'
+                      : 'hover:bg-od-surface/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-od-text-dim text-xs font-mono w-5">
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    <span className={`font-medium truncate flex-1 ${
+                      isCurrent ? 'text-od-accent' : 'text-white'
+                    }`}>
+                      {block.name}
+                    </span>
+                    {ouBadge}
+                  </div>
+                  <div className="text-od-text-dim text-xs ml-7 mt-0.5 flex items-center gap-2">
+                    {block.elements.length > 0 && (
+                      <span>
+                        {block.elements.length} el{block.elements.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
                     {block.estimated_duration_sec > 0 && (
-                      <span className="ml-2">({Math.floor(block.estimated_duration_sec / 60)}:{String(block.estimated_duration_sec % 60).padStart(2, '0')})</span>
+                      <span>{fmtDur(block.estimated_duration_sec)}</span>
+                    )}
+                    {/* Back-time for future blocks */}
+                    {isFuture && bt && (
+                      <span className="ml-auto text-od-accent font-mono font-medium">
+                        {formatClockTime(bt)}
+                      </span>
                     )}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
           {/* Block navigation */}
           <div className="p-2 border-t border-od-surface-light flex gap-1">
@@ -300,6 +361,17 @@ export default function LivePage() {
                   PVW{tally.preview ? `: ${tally.preview}` : ''}
                 </div>
               </div>
+              {/* REC/STREAM indicators */}
+              {tally.recording && (
+                <span className="px-3 py-2 rounded font-bold text-sm bg-red-600 text-white animate-pulse">
+                  REC
+                </span>
+              )}
+              {tally.streaming && (
+                <span className="px-3 py-2 rounded font-bold text-sm bg-blue-600 text-white">
+                  STREAM
+                </span>
+              )}
               <div className="flex-1" />
             </div>
 
@@ -354,7 +426,7 @@ export default function LivePage() {
                   </h2>
                   {currentBlock.estimated_duration_sec > 0 && (
                     <span className="text-od-text-dim text-sm">
-                      Est. {Math.floor(currentBlock.estimated_duration_sec / 60)}:{String(currentBlock.estimated_duration_sec % 60).padStart(2, '0')}
+                      Est. {fmtDur(currentBlock.estimated_duration_sec)}
                     </span>
                   )}
                 </div>
@@ -454,9 +526,18 @@ export default function LivePage() {
 
           {/* Execution log */}
           <div className="h-48 border-t border-od-surface-light overflow-y-auto p-3 shrink-0">
-            <h3 className="text-[10px] font-medium text-od-text-dim uppercase tracking-wider mb-1.5">
-              Execution Log
-            </h3>
+            <div className="flex items-center justify-between mb-1.5">
+              <h3 className="text-[10px] font-medium text-od-text-dim uppercase tracking-wider">
+                Execution Log
+              </h3>
+              <a
+                href={`/api/shows/${showId}/execution-log/export`}
+                download
+                className="text-[10px] px-2 py-0.5 bg-od-surface-light text-od-text-dim rounded hover:text-white transition-colors"
+              >
+                Export CSV
+              </a>
+            </div>
             <div className="space-y-0.5 font-mono text-xs">
               {executionLog.length === 0 ? (
                 <p className="text-od-text-dim">No events yet</p>

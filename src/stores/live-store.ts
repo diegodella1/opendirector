@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import type { Signal, ExecutionLogEntry, TallyState, Block, Element } from '@/lib/types';
+import type { BlockTiming } from '@/lib/timing';
 
 interface BlockWithElements extends Block {
   elements: Element[];
@@ -18,6 +19,7 @@ interface LiveStoreState {
   // Timing
   showStartedAt: string | null;
   blockStartedAt: string | null;
+  blockTimings: Record<string, BlockTiming>;
 
   // Live data
   signals: Signal[];
@@ -64,6 +66,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   currentBlockId: null,
   showStartedAt: null,
   blockStartedAt: null,
+  blockTimings: {},
   signals: [],
   executionLog: [],
   tally: { program: null, preview: null },
@@ -129,7 +132,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
             set({ showStartedAt: new Date().toISOString() });
           }
           if (msg.payload.status === 'ready') {
-            set({ showStartedAt: null, triggeredElements: new Set<string>() });
+            set({ showStartedAt: null, blockStartedAt: null, blockTimings: {}, triggeredElements: new Set<string>() });
           }
         }
         if (msg.type === 'cue_ack' && msg.payload?.elementId) {
@@ -216,7 +219,57 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   },
 
   setCurrentBlock: (blockId) => {
-    set({ currentBlockId: blockId, blockStartedAt: new Date().toISOString() });
+    const { currentBlockId, blockStartedAt, blockTimings, showId, blocks } = get();
+    const now = new Date().toISOString();
+    const newTimings = { ...blockTimings };
+
+    // Finalize outgoing block
+    if (currentBlockId && blockStartedAt) {
+      const actualSec = Math.floor((Date.now() - new Date(blockStartedAt).getTime()) / 1000);
+      newTimings[currentBlockId] = {
+        startedAt: blockStartedAt,
+        endedAt: now,
+        actualDurationSec: actualSec,
+      };
+
+      // Persist actual_duration_sec + status:done to server (fire-and-forget)
+      if (showId) {
+        fetch(`/api/shows/${showId}/blocks/${currentBlockId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ actual_duration_sec: actualSec, status: 'done' }),
+        }).catch(() => {});
+      }
+
+      // Update block status locally
+      set({
+        blocks: blocks.map((b) =>
+          b.id === currentBlockId ? { ...b, status: 'done' as const, actual_duration_sec: actualSec } : b
+        ),
+      });
+    }
+
+    // Start new block
+    if (blockId) {
+      newTimings[blockId] = { startedAt: now, endedAt: null, actualDurationSec: null };
+
+      // Mark as on_air (fire-and-forget)
+      if (showId) {
+        fetch(`/api/shows/${showId}/blocks/${blockId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'on_air' }),
+        }).catch(() => {});
+      }
+
+      set({
+        blocks: get().blocks.map((b) =>
+          b.id === blockId ? { ...b, status: 'on_air' as const } : b
+        ),
+      });
+    }
+
+    set({ currentBlockId: blockId, blockStartedAt: now, blockTimings: newTimings, triggeredElements: new Set<string>() });
   },
 
   // Execution commands
@@ -257,7 +310,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   },
 
   stopShow: async () => {
-    const { showId } = get();
+    const { showId, blocks } = get();
     if (!showId) return;
     const res = await fetch(`/api/shows/${showId}/status`, {
       method: 'PUT',
@@ -265,7 +318,22 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
       body: JSON.stringify({ status: 'ready' }),
     });
     if (res.ok) {
-      set({ showStatus: 'ready', showStartedAt: null, triggeredElements: new Set<string>() });
+      // Reset all block statuses to pending
+      for (const b of blocks) {
+        fetch(`/api/shows/${showId}/blocks/${b.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'pending', actual_duration_sec: null }),
+        }).catch(() => {});
+      }
+      set({
+        showStatus: 'ready',
+        showStartedAt: null,
+        blockStartedAt: null,
+        blockTimings: {},
+        triggeredElements: new Set<string>(),
+        blocks: blocks.map((b) => ({ ...b, status: 'pending' as const, actual_duration_sec: null })),
+      });
     }
   },
 
@@ -283,7 +351,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   },
 
   goReady: async () => {
-    const { showId } = get();
+    const { showId, blocks } = get();
     if (!showId) return;
     const res = await fetch(`/api/shows/${showId}/status`, {
       method: 'PUT',
@@ -291,7 +359,22 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
       body: JSON.stringify({ status: 'ready' }),
     });
     if (res.ok) {
-      set({ showStatus: 'ready', showStartedAt: null, triggeredElements: new Set<string>() });
+      // Reset all block statuses
+      for (const b of blocks) {
+        fetch(`/api/shows/${showId}/blocks/${b.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'pending', actual_duration_sec: null }),
+        }).catch(() => {});
+      }
+      set({
+        showStatus: 'ready',
+        showStartedAt: null,
+        blockStartedAt: null,
+        blockTimings: {},
+        triggeredElements: new Set<string>(),
+        blocks: blocks.map((b) => ({ ...b, status: 'pending' as const, actual_duration_sec: null })),
+      });
     }
   },
 

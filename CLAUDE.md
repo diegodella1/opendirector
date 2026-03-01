@@ -30,12 +30,12 @@ Sistema open-source de producción de TV en vivo. Reemplaza CuEZ. Dos componente
 - Tablas con prefijo `od_` (od_shows, od_blocks, od_elements, etc.)
 - IDs son UUID (gen_random_uuid()), timestamps son TIMESTAMPTZ
 - Un Automator por show (enforced por el server)
-- Auth: PIN hasheado (bcrypt) → session token UUID. Nunca PIN en URLs
+- Auth: NO implementado aún — acceso abierto. PIN-based auth planificado
 - Optimistic locking: todo edit del rundown lleva `expectedVersion`, 409 si no matchea
 - Show state machine: draft → ready → rehearsal/live → archived (ver transiciones en spec)
 - Dark mode obligatorio en toda la UI
 - Inputs de vMix referenciados por Key, nunca por número
-- WebSocket: 5 channels (rundown, execution, prompter, tally, signals) con prioridades definidas
+- WebSocket: relay simple con 5 channels (rundown, execution, prompter, tally, signals). Sin auth en WS
 - Media: validar codec con ffprobe al upload, advertir si no es compatible con vMix (no bloquear)
 - Errores de vMix deben ser visibles en UI del Automator Y en Go Live del productor
 
