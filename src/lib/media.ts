@@ -60,16 +60,12 @@ export async function extractMetadata(filePath: string): Promise<MediaMetadata> 
   }
 }
 
-export async function generateThumbnail(inputPath: string, outputPath: string): Promise<boolean> {
+export async function generateThumbnail(inputPath: string, outputPath: string, isImage = false): Promise<boolean> {
   try {
-    await execFileAsync('ffmpeg', [
-      '-y', '-i', inputPath,
-      '-ss', '00:00:01',
-      '-vframes', '1',
-      '-vf', 'scale=320:-1',
-      '-q:v', '5',
-      outputPath,
-    ]);
+    const args = isImage
+      ? ['-y', '-i', inputPath, '-vf', 'scale=320:-1', '-q:v', '5', outputPath]
+      : ['-y', '-i', inputPath, '-ss', '00:00:01', '-vframes', '1', '-vf', 'scale=320:-1', '-q:v', '5', outputPath];
+    await execFileAsync('ffmpeg', args);
     return true;
   } catch {
     return false;

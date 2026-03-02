@@ -62,7 +62,8 @@ export async function POST(
 
   // Generate thumbnail
   const thumbPath = path.join(mediaDir, 'thumbs', `${uuid}.jpg`);
-  const hasThumb = await generateThumbnail(filePath, thumbPath);
+  const isImage = (file.type || '').startsWith('image/');
+  const hasThumb = await generateThumbnail(filePath, thumbPath, isImage);
 
   // Calculate checksum
   const checksum = await calculateChecksum(filePath);

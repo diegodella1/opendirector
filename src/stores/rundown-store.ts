@@ -79,9 +79,12 @@ export const useRundownStore = create<RundownState>((set, get) => ({
     });
     if (!res.ok) return;
     const block = await res.json();
-    set((state) => ({
-      blocks: [...state.blocks, { ...block, elements: [] }],
-    }));
+    set((state) => {
+      // Dedup: WS handler may have already added this block
+      const exists = state.blocks.some((b) => b.id === block.id);
+      if (exists) return state;
+      return { blocks: [...state.blocks, { ...block, elements: [] }] };
+    });
   },
 
   updateBlock: async (showId, blockId, changes) => {
@@ -123,11 +126,13 @@ export const useRundownStore = create<RundownState>((set, get) => ({
     if (!res.ok) return;
     const newElement = await res.json();
     set((state) => ({
-      blocks: state.blocks.map((b) =>
-        b.id === blockId
-          ? { ...b, elements: [...b.elements, { ...newElement, actions: newElement.actions || [] }] }
-          : b
-      ),
+      blocks: state.blocks.map((b) => {
+        if (b.id !== blockId) return b;
+        // Dedup: WS handler may have already added this element
+        const exists = b.elements.some((e) => e.id === newElement.id);
+        if (exists) return b;
+        return { ...b, elements: [...b.elements, { ...newElement, actions: newElement.actions || [] }] };
+      }),
     }));
   },
 
@@ -230,11 +235,13 @@ export const useRundownStore = create<RundownState>((set, get) => ({
         b.id === blockId
           ? {
               ...b,
-              elements: b.elements.map((e) =>
-                e.id === elementId
-                  ? { ...e, actions: [...e.actions, newAction] }
-                  : e
-              ),
+              elements: b.elements.map((e) => {
+                if (e.id !== elementId) return e;
+                // Dedup: WS handler may have already added this action
+                const exists = e.actions.some((a) => a.id === newAction.id);
+                if (exists) return e;
+                return { ...e, actions: [...e.actions, newAction] };
+              }),
             }
           : b
       ),
