@@ -75,6 +75,7 @@ export default function PrompterPage() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [scrollSyncMode, setScrollSyncMode] = useState<'off' | 'master' | 'follower'>('off');
   const wsRef = useRef<WebSocket | null>(null);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Config from DB
   const [config, setConfig] = useState<PrompterConfig | null>(null);
@@ -153,12 +154,18 @@ export default function PrompterPage() {
         setActiveSignal(signal);
 
         if (signal.type === 'countdown' && signal.value) {
+          // Clear any previous countdown timer
+          if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current);
+            countdownTimerRef.current = null;
+          }
           let sec = parseInt(signal.value, 10);
           setCountdown(sec);
-          const timer = setInterval(() => {
+          countdownTimerRef.current = setInterval(() => {
             sec--;
             if (sec <= 0) {
-              clearInterval(timer);
+              clearInterval(countdownTimerRef.current!);
+              countdownTimerRef.current = null;
               setActiveSignal(null);
               setCountdown(null);
             } else {
@@ -173,6 +180,10 @@ export default function PrompterPage() {
       }
 
       if (msg.channel === 'signals' && msg.type === 'signals_cleared') {
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+          countdownTimerRef.current = null;
+        }
         setActiveSignal(null);
         setCountdown(null);
       }
@@ -191,7 +202,14 @@ export default function PrompterPage() {
       }
     };
 
-    return () => { ws.close(); wsRef.current = null; };
+    return () => {
+      ws.close();
+      wsRef.current = null;
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+    };
   }, [showId]);
 
   // Auto-scroll + master sync broadcast
