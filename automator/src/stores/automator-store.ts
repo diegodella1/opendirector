@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import type { Show, ShowConfig, Block, LogEntry, TallyState, Action, MediaSyncState, GtTemplate, ClipPosition } from '@/lib/types';
 import { fetchRundown, fetchShows, connectWebSocket, executeCue, connectVmix, syncMedia, getMediaSyncStatus, setMediaFolder as setMediaFolderApi, loadCachedRundown, listenEvent, registerTimecodeTriggers, clearTimecodeTriggers, checkTimecodeTriggers, runPreflightCheck, setActiveShow } from '@/lib/tauri-api';
 import type { PreflightCheck } from '@/lib/tauri-api';
@@ -1095,7 +1096,7 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
 // ── Hook helper for components ──────────────────────────────────────
 
 export function useActiveShowState() {
-  return useAutomatorStore(s => {
+  return useAutomatorStore(useShallow(s => {
     const tab = s.activeTabId ? s.tabs.get(s.activeTabId) : null;
     return {
       show: tab?.show ?? null,
@@ -1118,7 +1119,7 @@ export function useActiveShowState() {
       wsConnected: tab?.wsConnected ?? false,
       mediaSyncStatus: tab?.mediaSyncStatus ?? [],
     };
-  });
+  }));
 }
 
 // ── Utilities ───────────────────────────────────────────────────────
