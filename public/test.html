@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -246,13 +246,13 @@
 
 <div class="hero">
   <h1>Open<span>Director</span> &mdash; Test Guide</h1>
-  <p class="subtitle">Checklist paso a paso para Productor, Operador y Host. Seguir en orden para validar todas las funciones del sistema.</p>
+  <p class="subtitle">Step-by-step checklist for Producer, Operator and Host. Follow in order to validate all system features.</p>
   <span class="version-badge">Testing Guide &middot; v0.1</span>
 </div>
 
 <div id="progress" class="progress-container">
   <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
-  <div id="progressText" class="progress-text">0 / 0 completados</div>
+  <div id="progressText" class="progress-text">0 / 0 completed</div>
 </div>
 
 <div class="page-layout">
@@ -261,43 +261,43 @@
 <aside class="sidebar">
   <nav>
     <div class="nav-group">
-      <div class="nav-label">Preparacion</div>
-      <a href="#antes">Antes de empezar</a>
-      <a href="#urls">URLs del sistema</a>
-      <a href="#roles-resumen">Resumen de roles</a>
+      <div class="nav-label">Preparation</div>
+      <a href="#before">Before You Start</a>
+      <a href="#urls">System URLs</a>
+      <a href="#roles-overview">Role Overview</a>
     </div>
     <div class="nav-group">
-      <div class="nav-label">Test: Productor</div>
-      <a href="#prod-crear">1. Crear show</a>
-      <a href="#prod-rundown">2. Armar rundown</a>
-      <a href="#prod-elements">3. Elementos y acciones</a>
+      <div class="nav-label">Test: Producer</div>
+      <a href="#prod-create">1. Create Show</a>
+      <a href="#prod-rundown">2. Build Rundown</a>
+      <a href="#prod-elements">3. Elements &amp; Actions</a>
       <a href="#prod-gt">4. GT Templates</a>
       <a href="#prod-media">5. Media</a>
-      <a href="#prod-prompter">6. Config de prompter</a>
-      <a href="#prod-ready">7. Pasar a Ready</a>
+      <a href="#prod-prompter">6. Prompter Config</a>
+      <a href="#prod-ready">7. Set to Ready</a>
     </div>
     <div class="nav-group">
-      <div class="nav-label">Test: Operador</div>
-      <a href="#op-connect">1. Conexion</a>
+      <div class="nav-label">Test: Operator</div>
+      <a href="#op-connect">1. Connection</a>
       <a href="#op-preflight">2. Pre-flight</a>
-      <a href="#op-media-sync">3. Media sync</a>
-      <a href="#op-rehearsal">4. Ensayo</a>
-      <a href="#op-live">5. Al aire</a>
-      <a href="#op-panic">6. Panic y recovery</a>
+      <a href="#op-media-sync">3. Media Sync</a>
+      <a href="#op-rehearsal">4. Rehearsal</a>
+      <a href="#op-live">5. On Air</a>
+      <a href="#op-panic">6. Panic &amp; Recovery</a>
     </div>
     <div class="nav-group">
       <div class="nav-label">Test: Host</div>
-      <a href="#host-open">1. Abrir prompter</a>
-      <a href="#host-controls">2. Controles</a>
-      <a href="#host-signals">3. Senales</a>
-      <a href="#host-sync">4. Scroll sync</a>
-      <a href="#host-offline">5. Modo offline</a>
+      <a href="#host-open">1. Open Prompter</a>
+      <a href="#host-controls">2. Controls</a>
+      <a href="#host-signals">3. Signals</a>
+      <a href="#host-sync">4. Scroll Sync</a>
+      <a href="#host-offline">5. Offline Mode</a>
     </div>
     <div class="nav-group">
-      <div class="nav-label">Test integrado</div>
-      <a href="#integration">Flujo completo</a>
-      <a href="#edge-cases">Casos borde</a>
-      <a href="#result">Resultado</a>
+      <div class="nav-label">Integration Test</div>
+      <a href="#integration">Full Flow</a>
+      <a href="#edge-cases">Edge Cases</a>
+      <a href="#result">Result</a>
     </div>
   </nav>
 </aside>
@@ -309,56 +309,56 @@
   <!-- PREPARATION -->
   <!-- ============================================================ -->
 
-  <section id="antes">
-    <h2>Antes de empezar</h2>
-    <p>Verificar que todo el entorno esta funcionando antes de comenzar los tests.</p>
+  <section id="before">
+    <h2>Before You Start</h2>
+    <p>Make sure the entire environment is up and running before starting the tests.</p>
 
     <div class="callout callout-info">
       <span class="callout-icon">&#9432;</span>
-      <div>El servidor OpenDirector debe estar corriendo. El Automator se prueba desde una PC con Windows donde corre vMix. El prompter se puede probar desde cualquier dispositivo con un navegador.</div>
+      <div>The OpenDirector server must be running. The Automator is tested from a Windows PC running vMix. The prompter can be tested from any device with a browser.</div>
     </div>
 
-    <h3>Requisitos</h3>
+    <h3>Requirements</h3>
     <ul class="checklist" data-group="prep">
-      <li>Servidor OpenDirector corriendo y accesible</li>
-      <li>PC con vMix abierto y al menos 3 inputs cargados</li>
-      <li>Automator instalado en la PC de vMix</li>
-      <li>Un segundo dispositivo (tablet/celular/otra PC) para el prompter</li>
-      <li>Al menos 1 clip de video corto (10-30 seg) para subir como media</li>
-      <li>Todos los dispositivos en la misma red local</li>
+      <li>OpenDirector server running and accessible</li>
+      <li>PC with vMix open and at least 3 inputs loaded</li>
+      <li>Automator installed on the vMix PC</li>
+      <li>A second device (tablet/phone/another PC) for the prompter</li>
+      <li>At least 1 short video clip (10-30 sec) to upload as media</li>
+      <li>All devices on the same local network</li>
     </ul>
   </section>
 
   <section id="urls">
-    <h2>URLs del sistema</h2>
-    <p>Reemplazar <code>SERVER</code> por la IP o hostname del servidor (ej: <code>192.168.1.14:3000</code>).</p>
+    <h2>System URLs</h2>
+    <p>Replace <code>SERVER</code> with the server IP or hostname (e.g. <code>192.168.1.14:3000</code>).</p>
     <div class="card">
       <table>
-        <tr><th>URL</th><th>Quien la usa</th><th>Para que</th></tr>
-        <tr><td><code>http://SERVER/</code></td><td>Productor</td><td>Home &mdash; crear y gestionar shows</td></tr>
-        <tr><td><code>http://SERVER/shows/{id}/edit</code></td><td>Productor</td><td>Editor de rundown</td></tr>
-        <tr><td><code>http://SERVER/shows/{id}/live</code></td><td>Productor</td><td>Panel Go Live (monitoreo en vivo)</td></tr>
-        <tr><td><code>http://SERVER/shows/{id}/prompter</code></td><td>Host / Talento</td><td>Teleprompter</td></tr>
-        <tr><td><code>http://SERVER/download</code></td><td>Operador</td><td>Descargar Automator (MSI)</td></tr>
-        <tr><td><code>http://SERVER/instructions.html</code></td><td>Todos</td><td>Manual de usuario completo</td></tr>
+        <tr><th>URL</th><th>Used By</th><th>Purpose</th></tr>
+        <tr><td><code>http://SERVER/</code></td><td>Producer</td><td>Home &mdash; create and manage shows</td></tr>
+        <tr><td><code>http://SERVER/shows/{id}/edit</code></td><td>Producer</td><td>Rundown editor</td></tr>
+        <tr><td><code>http://SERVER/shows/{id}/live</code></td><td>Producer</td><td>Go Live panel (live monitoring)</td></tr>
+        <tr><td><code>http://SERVER/shows/{id}/prompter</code></td><td>Host / Talent</td><td>Teleprompter</td></tr>
+        <tr><td><code>http://SERVER/download</code></td><td>Operator</td><td>Download Automator (MSI)</td></tr>
+        <tr><td><code>http://SERVER/instructions.html</code></td><td>Everyone</td><td>Full user manual</td></tr>
       </table>
     </div>
   </section>
 
-  <section id="roles-resumen">
-    <h2>Resumen de roles</h2>
+  <section id="roles-overview">
+    <h2>Role Overview</h2>
     <div class="card-row">
       <div class="card">
-        <h4><span class="tag tag-blue">Productor</span></h4>
-        <p>Arma el rundown en el browser, sube media, escribe guiones, configura el show y monitorea la salida al aire desde Go Live. Envia senales al talento.</p>
+        <h4><span class="tag tag-blue">Producer</span></h4>
+        <p>Builds the rundown in the browser, uploads media, writes scripts, configures the show and monitors the live output from Go Live. Sends signals to talent.</p>
       </div>
       <div class="card">
-        <h4><span class="tag tag-purple">Operador</span></h4>
-        <p>Usa el Automator (app Windows) para ejecutar el rundown contra vMix. Avanza bloques, dispara elementos, controla clips y graficos.</p>
+        <h4><span class="tag tag-purple">Operator</span></h4>
+        <p>Uses the Automator (Windows app) to execute the rundown against vMix. Advances blocks, fires elements, controls clips and graphics.</p>
       </div>
       <div class="card">
-        <h4><span class="tag tag-green">Host / Talento</span></h4>
-        <p>Lee el guion desde el teleprompter en un browser. Recibe senales visuales del productor (countdown, wrap, go). No necesita instalar nada.</p>
+        <h4><span class="tag tag-green">Host / Talent</span></h4>
+        <p>Reads the script from the teleprompter in a browser. Receives visual signals from the producer (countdown, wrap, go). No installation needed.</p>
       </div>
     </div>
   </section>
@@ -370,67 +370,67 @@
   <!-- ============================================================ -->
 
   <div class="role-header">
-    <h3><span class="tag tag-blue">Productor</span> &mdash; Tests del productor</h3>
-    <div class="role-desc">Abrir el browser y navegar a <code>http://SERVER/</code></div>
-    <div class="role-where">Donde: Cualquier PC/Mac/tablet con browser moderno</div>
+    <h3><span class="tag tag-blue">Producer</span> &mdash; Producer Tests</h3>
+    <div class="role-desc">Open the browser and navigate to <code>http://SERVER/</code></div>
+    <div class="role-where">Where: Any PC/Mac/tablet with a modern browser</div>
   </div>
 
-  <section id="prod-crear">
-    <h3>1. Crear show</h3>
+  <section id="prod-create">
+    <h3>1. Create Show</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
-    <ul class="checklist" data-group="prod-crear">
-      <li>Ir a la Home (<code>/</code>) y verificar que la lista de shows carga</li>
-      <li>Click en <strong>"New Show"</strong> &rarr; se crea un show en blanco y se abre el editor</li>
-      <li>Verificar que el show nuevo aparece en estado <strong>Draft</strong></li>
-      <li>Cambiar el nombre del show desde el editor (hacer click en el titulo)</li>
-      <li>Volver a Home y confirmar que el nombre se actualizo</li>
+    <ul class="checklist" data-group="prod-create">
+      <li>Go to Home (<code>/</code>) and verify the show list loads</li>
+      <li>Click <strong>"New Show"</strong> &rarr; a blank show is created and the editor opens</li>
+      <li>Verify the new show appears with <strong>Draft</strong> status</li>
+      <li>Rename the show from the editor (click on the title)</li>
+      <li>Go back to Home and confirm the name has updated</li>
     </ul>
 
     <div class="callout callout-tip">
       <span class="callout-icon">&#10003;</span>
-      <div>Si hay templates guardados, tambien probar crear un show desde template.</div>
+      <div>If there are saved templates, also try creating a show from a template.</div>
     </div>
   </section>
 
   <section id="prod-rundown">
-    <h3>2. Armar rundown</h3>
+    <h3>2. Build Rundown</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="prod-rundown">
-      <li>Agregar al menos <strong>3 bloques</strong> al rundown</li>
-      <li>Nombrar cada bloque (ej: "Apertura", "Nota 1", "Cierre")</li>
-      <li>Setear duracion estimada en cada bloque (ej: 120 seg, 180 seg, 60 seg)</li>
-      <li><strong>Drag &amp; drop</strong>: reordenar los bloques arrastrando &rarr; verificar que el orden se guarda</li>
-      <li>Escribir un guion de prompter en al menos 1 bloque (campo Script)</li>
-      <li>Usar markup especial en el guion: <code>[PAUSA]</code>, <code>[VTR: Clip Test]</code>, <code>**texto en negrita**</code>, <code>(instruccion)</code></li>
-      <li>Agregar notas de produccion en al menos 1 bloque</li>
-      <li>Asignar camaras a los bloques (ej: CAM1, CAM2)</li>
-      <li>Probar <strong>Undo</strong> (<kbd>Ctrl</kbd>+<kbd>Z</kbd>) despues de un cambio &rarr; el cambio se revierte</li>
-      <li>Probar <strong>Redo</strong> (<kbd>Ctrl</kbd>+<kbd>Y</kbd>) &rarr; el cambio se re-aplica</li>
+      <li>Add at least <strong>3 blocks</strong> to the rundown</li>
+      <li>Name each block (e.g. "Opening", "Segment 1", "Closing")</li>
+      <li>Set an estimated duration on each block (e.g. 120 sec, 180 sec, 60 sec)</li>
+      <li><strong>Drag &amp; drop</strong>: reorder blocks by dragging &rarr; verify the order is saved</li>
+      <li>Write a prompter script in at least 1 block (Script field)</li>
+      <li>Use special markup in the script: <code>[PAUSA]</code>, <code>[VTR: Test Clip]</code>, <code>**bold text**</code>, <code>(instruction)</code></li>
+      <li>Add production notes in at least 1 block</li>
+      <li>Assign cameras to blocks (e.g. CAM1, CAM2)</li>
+      <li>Test <strong>Undo</strong> (<kbd>Ctrl</kbd>+<kbd>Z</kbd>) after a change &rarr; the change is reverted</li>
+      <li>Test <strong>Redo</strong> (<kbd>Ctrl</kbd>+<kbd>Y</kbd>) &rarr; the change is re-applied</li>
     </ul>
   </section>
 
   <section id="prod-elements">
-    <h3>3. Elementos y acciones</h3>
+    <h3>3. Elements &amp; Actions</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
-    <p>Dentro de los bloques, agregar distintos tipos de elementos:</p>
+    <p>Inside the blocks, add different types of elements:</p>
 
     <ul class="checklist" data-group="prod-elements">
-      <li>Agregar un elemento <span class="tag tag-purple">CLIP</span> &rarr; asignarle un media file (se sube en el paso de Media)</li>
-      <li>Agregar un elemento <span class="tag tag-blue">GFX</span> (grafico) &rarr; configurar vMix input key y overlay</li>
-      <li>Agregar un elemento <span class="tag tag-yellow">LT</span> (lower third) &rarr; asignarle un GT Template y completar los campos de texto</li>
-      <li>Agregar un elemento <span class="tag tag-green">AUD</span> (audio) &rarr; configurar la funcion de audio (AudioOn, SetVolume, etc.)</li>
-      <li>Agregar un elemento <span class="tag tag-gray">NOTE</span> &rarr; verificar que es solo informativo, no ejecuta acciones</li>
-      <li>Configurar acciones en al menos 1 elemento: on_cue (al hacer CUE), step (boton manual), on_exit (al salir)</li>
-      <li>Reordenar elementos dentro de un bloque con drag &amp; drop</li>
-      <li>Eliminar un elemento &rarr; confirmar que desaparece</li>
+      <li>Add a <span class="tag tag-purple">CLIP</span> element &rarr; assign a media file to it (uploaded in the Media step)</li>
+      <li>Add a <span class="tag tag-blue">GFX</span> (graphic) element &rarr; configure vMix input key and overlay</li>
+      <li>Add a <span class="tag tag-yellow">LT</span> (lower third) element &rarr; assign a GT Template and fill in the text fields</li>
+      <li>Add an <span class="tag tag-green">AUD</span> (audio) element &rarr; configure the audio function (AudioOn, SetVolume, etc.)</li>
+      <li>Add a <span class="tag tag-gray">NOTE</span> element &rarr; verify it is informational only, does not execute actions</li>
+      <li>Configure actions on at least 1 element: on_cue (when CUE'd), step (manual button), on_exit (when leaving)</li>
+      <li>Reorder elements within a block using drag &amp; drop</li>
+      <li>Delete an element &rarr; confirm it disappears</li>
     </ul>
 
     <div class="callout callout-warn">
       <span class="callout-icon">&#9888;</span>
-      <div>Los inputs de vMix se referencian por <strong>Key</strong> (nombre unico), nunca por numero. Verificar que los keys coinciden con lo configurado en vMix.</div>
+      <div>vMix inputs are referenced by <strong>Key</strong> (unique name), never by number. Verify that the keys match what is configured in vMix.</div>
     </div>
   </section>
 
@@ -439,11 +439,11 @@
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="prod-gt">
-      <li>Crear al menos 1 <strong>GT Template</strong> en la configuracion del show</li>
-      <li>Configurar: vMix input key del GT Title, overlay number, nombres de campos (ej: <code>Headline.Text</code>, <code>Description.Text</code>)</li>
-      <li>Asignar el GT Template a un elemento LT</li>
-      <li>Completar los valores de texto en el elemento LT</li>
-      <li>Verificar que el preview del lower third muestra los valores correctos</li>
+      <li>Create at least 1 <strong>GT Template</strong> in the show configuration</li>
+      <li>Configure: vMix input key of the GT Title, overlay number, field names (e.g. <code>Headline.Text</code>, <code>Description.Text</code>)</li>
+      <li>Assign the GT Template to an LT element</li>
+      <li>Fill in the text values on the LT element</li>
+      <li>Verify that the lower third preview shows the correct values</li>
     </ul>
   </section>
 
@@ -452,41 +452,41 @@
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="prod-media">
-      <li>Subir al menos 1 archivo de video (drag &amp; drop o boton de upload)</li>
-      <li>Verificar que se genera un <strong>thumbnail</strong> automaticamente</li>
-      <li>Verificar que la info del archivo aparece (codec, duracion, resolucion)</li>
-      <li>Si el codec no es compatible con vMix, verificar que aparece un <strong>warning</strong> (no bloquea)</li>
-      <li>Asignar el media a un elemento CLIP del rundown</li>
+      <li>Upload at least 1 video file (drag &amp; drop or upload button)</li>
+      <li>Verify a <strong>thumbnail</strong> is generated automatically</li>
+      <li>Verify file info appears (codec, duration, resolution)</li>
+      <li>If the codec is not vMix-compatible, verify a <strong>warning</strong> appears (does not block)</li>
+      <li>Assign the media to a CLIP element in the rundown</li>
     </ul>
   </section>
 
   <section id="prod-prompter">
-    <h3>6. Configuracion del prompter</h3>
+    <h3>6. Prompter Configuration</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="prod-prompter">
-      <li>Abrir la configuracion del prompter en el editor del show</li>
-      <li>Ajustar tamano de fuente, familia tipografica, colores</li>
-      <li>Configurar posicion de la linea guia (default: 33%)</li>
-      <li>Configurar velocidad de scroll por defecto</li>
-      <li>Verificar que los cambios se guardan</li>
+      <li>Open the prompter configuration in the show editor</li>
+      <li>Adjust font size, font family, colors</li>
+      <li>Configure guide line position (default: 33%)</li>
+      <li>Configure default scroll speed</li>
+      <li>Verify changes are saved</li>
     </ul>
   </section>
 
   <section id="prod-ready">
-    <h3>7. Pasar a Ready</h3>
+    <h3>7. Set to Ready</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="prod-ready">
-      <li>Desde el editor, cambiar el estado del show de <strong>Draft</strong> a <strong>Ready</strong></li>
-      <li>Verificar que el badge de estado cambia</li>
-      <li>Confirmar que el show sigue siendo editable en estado Ready</li>
-      <li>Verificar que el show ahora aparece disponible para el Automator</li>
+      <li>From the editor, change the show status from <strong>Draft</strong> to <strong>Ready</strong></li>
+      <li>Verify the status badge updates</li>
+      <li>Confirm the show is still editable in Ready state</li>
+      <li>Verify the show now appears available for the Automator</li>
     </ul>
 
     <div class="callout callout-info">
       <span class="callout-icon">&#9432;</span>
-      <div>El Automator solo puede conectarse a shows en estado <strong>Ready</strong>, <strong>Rehearsal</strong> o <strong>Live</strong>. No puede conectarse a shows en Draft.</div>
+      <div>The Automator can only connect to shows in <strong>Ready</strong>, <strong>Rehearsal</strong> or <strong>Live</strong> state. It cannot connect to Draft shows.</div>
     </div>
   </section>
 
@@ -497,116 +497,116 @@
   <!-- ============================================================ -->
 
   <div class="role-header">
-    <h3><span class="tag tag-purple">Operador</span> &mdash; Tests del operador (Automator)</h3>
-    <div class="role-desc">Abrir el Automator en la PC donde corre vMix</div>
-    <div class="role-where">Donde: PC Windows con vMix abierto</div>
+    <h3><span class="tag tag-purple">Operator</span> &mdash; Operator Tests (Automator)</h3>
+    <div class="role-desc">Open the Automator on the PC running vMix</div>
+    <div class="role-where">Where: Windows PC with vMix open</div>
   </div>
 
   <section id="op-connect">
-    <h3>1. Conexion</h3>
+    <h3>1. Connection</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="op-connect">
-      <li>Abrir el Automator &rarr; aparece la pantalla de conexion</li>
-      <li>Ingresar la <strong>URL del servidor</strong> (ej: <code>http://192.168.1.14:3000</code>)</li>
-      <li>Verificar que el <strong>dropdown de shows</strong> carga los shows disponibles (solo Ready/Rehearsal/Live)</li>
-      <li>Seleccionar el show de prueba</li>
-      <li>Configurar <strong>vMix Host</strong> (default: <code>127.0.0.1</code>) y <strong>Puerto</strong> (default: <code>8099</code>)</li>
-      <li>Configurar la <strong>carpeta de media</strong> (ej: <code>C:\OpenDirector\Media</code>)</li>
-      <li>Click en <strong>CONNECT</strong></li>
-      <li>Verificar indicador verde de <strong>WebSocket conectado</strong> en la barra de estado</li>
-      <li>Verificar indicador verde de <strong>vMix conectado</strong> en la barra de estado</li>
-      <li>Verificar que el rundown completo se carga en el panel principal</li>
+      <li>Open the Automator &rarr; the connection screen appears</li>
+      <li>Enter the <strong>server URL</strong> (e.g. <code>http://192.168.1.14:3000</code>)</li>
+      <li>Verify the <strong>show dropdown</strong> loads available shows (only Ready/Rehearsal/Live)</li>
+      <li>Select the test show</li>
+      <li>Configure <strong>vMix Host</strong> (default: <code>127.0.0.1</code>) and <strong>Port</strong> (default: <code>8099</code>)</li>
+      <li>Configure the <strong>media folder</strong> (e.g. <code>C:\OpenDirector\Media</code>)</li>
+      <li>Click <strong>CONNECT</strong></li>
+      <li>Verify green <strong>WebSocket connected</strong> indicator in the status bar</li>
+      <li>Verify green <strong>vMix connected</strong> indicator in the status bar</li>
+      <li>Verify the full rundown loads in the main panel</li>
     </ul>
 
     <div class="callout callout-warn">
       <span class="callout-icon">&#9888;</span>
-      <div>Si la conexion a vMix falla, verificar que vMix esta abierto y que el API TCP esta habilitado (Settings &rarr; Web Controller &rarr; Enable TCP API).</div>
+      <div>If the vMix connection fails, verify that vMix is open and the TCP API is enabled (Settings &rarr; Web Controller &rarr; Enable TCP API).</div>
     </div>
   </section>
 
   <section id="op-preflight">
-    <h3>2. Pre-flight check</h3>
+    <h3>2. Pre-flight Check</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="op-preflight">
-      <li>Abrir el panel de <strong>Pre-flight</strong></li>
-      <li>Click en <strong>"Run Check"</strong></li>
-      <li>Verificar que se validan los inputs de vMix (clip pools, GT Titles, etc.)</li>
-      <li>Si hay errores (X rojo), corregir la configuracion y re-chequear</li>
-      <li>Si hay warnings (! amarillo), revisar pero no es obligatorio corregir</li>
-      <li>Lograr al menos todos los checks en OK (checkmark verde) o warning</li>
+      <li>Open the <strong>Pre-flight</strong> panel</li>
+      <li>Click <strong>"Run Check"</strong></li>
+      <li>Verify vMix inputs are validated (clip pools, GT Titles, etc.)</li>
+      <li>If there are errors (red X), fix the configuration and re-check</li>
+      <li>If there are warnings (yellow !), review but fixing is not mandatory</li>
+      <li>Achieve at least all checks at OK (green checkmark) or warning</li>
     </ul>
   </section>
 
   <section id="op-media-sync">
-    <h3>3. Media sync</h3>
+    <h3>3. Media Sync</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="op-media-sync">
-      <li>Verificar que el panel de <strong>Media Sync</strong> muestra los archivos a descargar</li>
-      <li>Esperar a que todos los archivos se descarguen (barras de progreso)</li>
-      <li>Verificar que cada archivo muestra estado <strong>"synced"</strong> (verde)</li>
-      <li>Verificar que los checksums (SHA256) coinciden</li>
-      <li>Confirmar que los archivos estan en la carpeta de media configurada</li>
+      <li>Verify the <strong>Media Sync</strong> panel shows the files to download</li>
+      <li>Wait for all files to download (progress bars)</li>
+      <li>Verify each file shows <strong>"synced"</strong> status (green)</li>
+      <li>Verify checksums (SHA256) match</li>
+      <li>Confirm files are in the configured media folder</li>
     </ul>
   </section>
 
   <section id="op-rehearsal">
-    <h3>4. Ensayo (Rehearsal)</h3>
-    <span class="phase-label phase-live">EN VIVO</span>
+    <h3>4. Rehearsal</h3>
+    <span class="phase-label phase-live">LIVE</span>
 
-    <p>Antes de ir al aire, hacer un ensayo completo:</p>
+    <p>Before going on air, do a full rehearsal run:</p>
 
     <ul class="checklist" data-group="op-rehearsal">
-      <li>El productor pasa el show a <strong>Rehearsal</strong> (o el operador con <kbd>Ctrl</kbd>+<kbd>R</kbd>)</li>
-      <li>Verificar que el badge de estado muestra "REHEARSAL" (amarillo)</li>
-      <li>Presionar <kbd>Space</kbd> para avanzar al primer bloque</li>
-      <li>Verificar que el bloque actual se resalta (borde rojo a la izquierda)</li>
-      <li>Seleccionar un elemento con las flechas <kbd>&uarr;</kbd>/<kbd>&darr;</kbd> o click</li>
-      <li>Presionar <kbd>Enter</kbd> para hacer CUE del elemento seleccionado</li>
-      <li>Verificar que la accion se ejecuta en vMix (el video/grafico aparece)</li>
-      <li>Probar botones de step (<kbd>F1</kbd>-<kbd>F8</kbd>) si hay acciones step configuradas</li>
-      <li>Avanzar por todos los bloques con <kbd>Space</kbd></li>
-      <li>Verificar los timers: show elapsed, block elapsed, block remaining</li>
-      <li>Verificar los back-times en bloques futuros (hora proyectada en azul)</li>
-      <li>Verificar tally: PGM (rojo) y PVW (verde) en el panel de tally</li>
-      <li>Presionar <kbd>Esc</kbd> para STOP &rarr; verificar que el show se detiene</li>
-      <li>Presionar <kbd>R</kbd> para RESET &rarr; verificar que vuelve al inicio</li>
+      <li>The producer sets the show to <strong>Rehearsal</strong> (or the operator with <kbd>Ctrl</kbd>+<kbd>R</kbd>)</li>
+      <li>Verify the status badge shows "REHEARSAL" (yellow)</li>
+      <li>Press <kbd>Space</kbd> to advance to the first block</li>
+      <li>Verify the current block is highlighted (red left border)</li>
+      <li>Select an element with arrow keys <kbd>&uarr;</kbd>/<kbd>&darr;</kbd> or click</li>
+      <li>Press <kbd>Enter</kbd> to CUE the selected element</li>
+      <li>Verify the action executes in vMix (the video/graphic appears)</li>
+      <li>Test step buttons (<kbd>F1</kbd>-<kbd>F8</kbd>) if step actions are configured</li>
+      <li>Advance through all blocks with <kbd>Space</kbd></li>
+      <li>Verify timers: show elapsed, block elapsed, block remaining</li>
+      <li>Verify back-times on future blocks (projected time in blue)</li>
+      <li>Verify tally: PGM (red) and PVW (green) in the tally panel</li>
+      <li>Press <kbd>Esc</kbd> to STOP &rarr; verify the show stops</li>
+      <li>Press <kbd>R</kbd> to RESET &rarr; verify it returns to the beginning</li>
     </ul>
 
     <div class="callout callout-tip">
       <span class="callout-icon">&#10003;</span>
-      <div>En Rehearsal los comandos van a vMix de verdad. Sirve para validar que todo esta bien configurado antes de ir al aire.</div>
+      <div>In Rehearsal, commands are sent to vMix for real. Use it to validate everything is properly configured before going live.</div>
     </div>
   </section>
 
   <section id="op-live">
-    <h3>5. Al aire (Live)</h3>
-    <span class="phase-label phase-live">EN VIVO</span>
+    <h3>5. On Air (Live)</h3>
+    <span class="phase-label phase-live">LIVE</span>
 
     <ul class="checklist" data-group="op-live">
-      <li>El productor pasa el show a <strong>Live</strong> (boton Go Live o <kbd>F5</kbd> desde Go Live panel)</li>
-      <li>Verificar que el badge de estado muestra "LIVE" (rojo, animado)</li>
-      <li>Ejecutar el show completo: avanzar bloques, cue elementos</li>
-      <li>Verificar que los clips reproducen correctamente (barra de progreso con posicion)</li>
-      <li>Verificar alternancia de <strong>A/B clip pool</strong> (el indicador cambia entre POOL A y POOL B)</li>
-      <li>Verificar que los lower thirds se muestran con el texto correcto</li>
-      <li>Verificar que los timers de over/under aparecen al completar bloques (<span style="color:#f87171">+0:32</span> rojo = overrun, <span style="color:#4ade80">-0:15</span> verde = under)</li>
-      <li>Probar <strong>modo AUTO</strong> (toggle en status bar): los elementos con trigger <code>on_block_start</code> disparan automaticamente</li>
-      <li>Verificar el <strong>execution log</strong>: cada comando aparece con timestamp, respuesta de vMix y latencia</li>
+      <li>The producer sets the show to <strong>Live</strong> (Go Live button or <kbd>F5</kbd> from Go Live panel)</li>
+      <li>Verify the status badge shows "LIVE" (red, animated)</li>
+      <li>Execute the full show: advance blocks, cue elements</li>
+      <li>Verify clips play correctly (progress bar with position)</li>
+      <li>Verify <strong>A/B clip pool</strong> alternation (indicator changes between POOL A and POOL B)</li>
+      <li>Verify lower thirds display with correct text</li>
+      <li>Verify over/under timers appear when blocks complete (<span style="color:#f87171">+0:32</span> red = overrun, <span style="color:#4ade80">-0:15</span> green = under)</li>
+      <li>Test <strong>AUTO mode</strong> (toggle in status bar): elements with trigger <code>on_block_start</code> fire automatically</li>
+      <li>Verify the <strong>execution log</strong>: each command shows timestamp, vMix response and latency</li>
     </ul>
   </section>
 
   <section id="op-panic">
-    <h3>6. Panic y recovery</h3>
-    <span class="phase-label phase-live">EN VIVO</span>
+    <h3>6. Panic &amp; Recovery</h3>
+    <span class="phase-label phase-live">LIVE</span>
 
     <ul class="checklist" data-group="op-panic">
-      <li>Presionar <kbd>F12</kbd> (PANIC) &rarr; verificar que corta a un input seguro (requiere <code>overrun_safe_input_key</code> configurado)</li>
-      <li>Simular desconexion del servidor (apagar WiFi del Automator brevemente) &rarr; verificar banner "OFFLINE"</li>
-      <li>Reconectar &rarr; verificar que el Automator se reconecta y sincroniza</li>
-      <li>Verificar que el show sigue ejecutandose durante la desconexion (usa cache SQLite local)</li>
+      <li>Press <kbd>F12</kbd> (PANIC) &rarr; verify it cuts to a safe input (requires <code>overrun_safe_input_key</code> configured)</li>
+      <li>Simulate server disconnection (briefly turn off WiFi on the Automator) &rarr; verify "OFFLINE" banner appears</li>
+      <li>Reconnect &rarr; verify the Automator reconnects and syncs</li>
+      <li>Verify the show keeps running during disconnection (uses local SQLite cache)</li>
     </ul>
   </section>
 
@@ -617,115 +617,115 @@
   <!-- ============================================================ -->
 
   <div class="role-header">
-    <h3><span class="tag tag-green">Host / Talento</span> &mdash; Tests del prompter</h3>
-    <div class="role-desc">Abrir <code>http://SERVER/shows/{id}/prompter</code> en un browser</div>
-    <div class="role-where">Donde: Tablet, celular, notebook o monitor dedicado</div>
+    <h3><span class="tag tag-green">Host / Talent</span> &mdash; Prompter Tests</h3>
+    <div class="role-desc">Open <code>http://SERVER/shows/{id}/prompter</code> in a browser</div>
+    <div class="role-where">Where: Tablet, phone, laptop or dedicated monitor</div>
   </div>
 
   <section id="host-open">
-    <h3>1. Abrir el prompter</h3>
+    <h3>1. Open the Prompter</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="host-open">
-      <li>Navegar a <code>http://SERVER/shows/{id}/prompter</code></li>
-      <li>Verificar que carga el guion completo (todos los bloques concatenados)</li>
-      <li>Verificar fondo negro con texto blanco (o los colores configurados)</li>
-      <li>Verificar la <strong>linea guia roja</strong> horizontal (indica posicion de lectura)</li>
-      <li>Verificar que los nombres de bloque aparecen como separadores grises</li>
-      <li>Verificar markup renderizado:
+      <li>Navigate to <code>http://SERVER/shows/{id}/prompter</code></li>
+      <li>Verify the full script loads (all blocks concatenated)</li>
+      <li>Verify black background with white text (or the configured colors)</li>
+      <li>Verify the <strong>red guide line</strong> is visible horizontally (indicates reading position)</li>
+      <li>Verify block names appear as gray section headers</li>
+      <li>Verify rendered markup:
         <ul>
-          <li><code>[PAUSA]</code> &rarr; separador amarillo centrado</li>
-          <li><code>[VTR: nombre]</code> &rarr; bloque con borde izquierdo violeta</li>
-          <li><code>**texto**</code> &rarr; negrita blanca</li>
-          <li><code>(instruccion)</code> &rarr; texto gris italica reducido</li>
+          <li><code>[PAUSA]</code> &rarr; centered yellow separator</li>
+          <li><code>[VTR: name]</code> &rarr; block with purple left border</li>
+          <li><code>**text**</code> &rarr; white bold</li>
+          <li><code>(instruction)</code> &rarr; gray italic at reduced size</li>
         </ul>
       </li>
     </ul>
   </section>
 
   <section id="host-controls">
-    <h3>2. Controles del prompter</h3>
+    <h3>2. Prompter Controls</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="host-controls">
-      <li>Presionar <kbd>Space</kbd> &rarr; activa/desactiva auto-scroll</li>
-      <li>Con auto-scroll activo, presionar <kbd>&darr;</kbd> &rarr; sube la velocidad</li>
-      <li>Presionar <kbd>&uarr;</kbd> &rarr; baja la velocidad</li>
-      <li>Presionar <kbd>+</kbd> &rarr; aumenta tamano de fuente</li>
-      <li>Presionar <kbd>-</kbd> &rarr; reduce tamano de fuente</li>
-      <li>Presionar <kbd>F</kbd> &rarr; entra en fullscreen</li>
-      <li>Presionar <kbd>F</kbd> otra vez &rarr; sale de fullscreen</li>
-      <li>Presionar <kbd>M</kbd> &rarr; activa modo espejo (texto invertido horizontalmente, para prompter de vidrio)</li>
-      <li>Presionar <kbd>M</kbd> otra vez &rarr; desactiva modo espejo</li>
-      <li>Presionar <kbd>C</kbd> &rarr; muestra panel de configuracion con sliders</li>
-      <li>En el panel de config: ajustar font size, scroll speed, guide position, margin</li>
+      <li>Press <kbd>Space</kbd> &rarr; toggles auto-scroll on/off</li>
+      <li>With auto-scroll on, press <kbd>&darr;</kbd> &rarr; increases speed</li>
+      <li>Press <kbd>&uarr;</kbd> &rarr; decreases speed</li>
+      <li>Press <kbd>+</kbd> &rarr; increases font size</li>
+      <li>Press <kbd>-</kbd> &rarr; decreases font size</li>
+      <li>Press <kbd>F</kbd> &rarr; enters fullscreen</li>
+      <li>Press <kbd>F</kbd> again &rarr; exits fullscreen</li>
+      <li>Press <kbd>M</kbd> &rarr; enables mirror mode (text flipped horizontally, for glass prompters)</li>
+      <li>Press <kbd>M</kbd> again &rarr; disables mirror mode</li>
+      <li>Press <kbd>C</kbd> &rarr; shows the configuration panel with sliders</li>
+      <li>In the config panel: adjust font size, scroll speed, guide position, margin</li>
     </ul>
   </section>
 
   <section id="host-signals">
-    <h3>3. Senales del productor</h3>
-    <span class="phase-label phase-live">EN VIVO</span>
+    <h3>3. Producer Signals</h3>
+    <span class="phase-label phase-live">LIVE</span>
 
-    <p>Mientras el show esta en Rehearsal o Live, el productor envia senales desde el panel Go Live. El host las ve como overlays grandes en la parte superior del prompter.</p>
+    <p>While the show is in Rehearsal or Live, the producer sends signals from the Go Live panel. The host sees them as large overlays at the top of the prompter.</p>
 
     <div class="callout callout-info">
       <span class="callout-icon">&#9432;</span>
-      <div>Para este test, necesitas que otra persona (o vos en otra ventana) este en el panel <strong>Go Live</strong> (<code>/shows/{id}/live</code>) para enviar las senales.</div>
+      <div>For this test, you need someone (or yourself in another window) on the <strong>Go Live</strong> panel (<code>/shows/{id}/live</code>) to send the signals.</div>
     </div>
 
     <ul class="checklist" data-group="host-signals">
-      <li><strong>Countdown 30s</strong>: aparece overlay amarillo con cuenta regresiva "30" hasta "0", luego desaparece</li>
-      <li><strong>Countdown 1min</strong>: overlay amarillo con cuenta regresiva de 60 segundos</li>
-      <li><strong>WRAP</strong>: overlay rojo parpadeante, se queda hasta que el productor lo cancela</li>
-      <li><strong>STRETCH</strong>: overlay azul "STRETCH", desaparece despues de 10 segundos</li>
-      <li><strong>STANDBY</strong>: overlay amarillo "STANDBY", desaparece despues de 10 segundos</li>
-      <li><strong>GO</strong>: overlay verde "GO", desaparece despues de 3 segundos</li>
-      <li><strong>Custom</strong>: overlay violeta con texto libre escrito por el productor, 10 segundos</li>
+      <li><strong>Countdown 30s</strong>: yellow overlay appears with countdown from "30" to "0", then disappears</li>
+      <li><strong>Countdown 1min</strong>: yellow overlay with 60-second countdown</li>
+      <li><strong>WRAP</strong>: blinking red overlay, stays until the producer clears it</li>
+      <li><strong>STRETCH</strong>: blue "STRETCH" overlay, disappears after 10 seconds</li>
+      <li><strong>STANDBY</strong>: yellow "STANDBY" overlay, disappears after 10 seconds</li>
+      <li><strong>GO</strong>: green "GO" overlay, disappears after 3 seconds</li>
+      <li><strong>Custom</strong>: purple overlay with free text typed by the producer, 10 seconds</li>
     </ul>
 
     <div class="card">
       <table>
-        <tr><th>Senal</th><th>Color</th><th>Duracion</th></tr>
-        <tr><td>Countdown</td><td style="color:#facc15">Amarillo</td><td>Cuenta regresiva hasta 0</td></tr>
-        <tr><td>Wrap</td><td style="color:#f87171">Rojo (parpadea)</td><td>Hasta que se cancela</td></tr>
-        <tr><td>Stretch</td><td style="color:#60a5fa">Azul</td><td>10 segundos</td></tr>
-        <tr><td>Standby</td><td style="color:#facc15">Amarillo</td><td>10 segundos</td></tr>
-        <tr><td>Go</td><td style="color:#4ade80">Verde</td><td>3 segundos</td></tr>
-        <tr><td>Custom</td><td style="color:#c084fc">Violeta</td><td>10 segundos</td></tr>
+        <tr><th>Signal</th><th>Color</th><th>Duration</th></tr>
+        <tr><td>Countdown</td><td style="color:#facc15">Yellow</td><td>Counts down to 0</td></tr>
+        <tr><td>Wrap</td><td style="color:#f87171">Red (blinking)</td><td>Until cleared</td></tr>
+        <tr><td>Stretch</td><td style="color:#60a5fa">Blue</td><td>10 seconds</td></tr>
+        <tr><td>Standby</td><td style="color:#facc15">Yellow</td><td>10 seconds</td></tr>
+        <tr><td>Go</td><td style="color:#4ade80">Green</td><td>3 seconds</td></tr>
+        <tr><td>Custom</td><td style="color:#c084fc">Purple</td><td>10 seconds</td></tr>
       </table>
     </div>
   </section>
 
   <section id="host-sync">
-    <h3>4. Scroll sync</h3>
+    <h3>4. Scroll Sync</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
-    <p>Si hay 2 dispositivos con el prompter abierto, se puede sincronizar el scroll entre ellos.</p>
+    <p>If there are 2 devices with the prompter open, scrolling can be synchronized between them.</p>
 
     <ul class="checklist" data-group="host-sync">
-      <li>Abrir el prompter en 2 dispositivos distintos para el mismo show</li>
-      <li>En el dispositivo 1, presionar <kbd>C</kbd> y setear scroll sync como <strong>MASTER</strong></li>
-      <li>En el dispositivo 2, presionar <kbd>C</kbd> y setear scroll sync como <strong>FOLLOWER</strong></li>
-      <li>Scrollear en el dispositivo MASTER &rarr; verificar que el FOLLOWER se mueve igual</li>
-      <li>Cambiar velocidad en MASTER &rarr; verificar que FOLLOWER la sigue</li>
+      <li>Open the prompter on 2 different devices for the same show</li>
+      <li>On device 1, press <kbd>C</kbd> and set scroll sync to <strong>MASTER</strong></li>
+      <li>On device 2, press <kbd>C</kbd> and set scroll sync to <strong>FOLLOWER</strong></li>
+      <li>Scroll on the MASTER device &rarr; verify the FOLLOWER follows</li>
+      <li>Change speed on MASTER &rarr; verify FOLLOWER matches</li>
     </ul>
   </section>
 
   <section id="host-offline">
-    <h3>5. Modo offline</h3>
+    <h3>5. Offline Mode</h3>
     <span class="phase-label phase-pre">PRE-SHOW</span>
 
     <ul class="checklist" data-group="host-offline">
-      <li>Con el prompter abierto y cargado, desconectar el dispositivo de la red</li>
-      <li>Verificar que aparece banner amarillo "OFFLINE &mdash; Using cached scripts"</li>
-      <li>Verificar que el auto-scroll, teclado y touch siguen funcionando</li>
-      <li>Verificar que el modo espejo sigue funcionando</li>
-      <li>Reconectar a la red &rarr; verificar que el banner desaparece y se reconecta</li>
+      <li>With the prompter open and loaded, disconnect the device from the network</li>
+      <li>Verify a yellow banner appears: "OFFLINE &mdash; Using cached scripts"</li>
+      <li>Verify auto-scroll, keyboard and touch controls still work</li>
+      <li>Verify mirror mode still works</li>
+      <li>Reconnect to the network &rarr; verify the banner disappears and it reconnects</li>
     </ul>
 
     <div class="callout callout-warn">
       <span class="callout-icon">&#9888;</span>
-      <div>En modo offline, las senales del productor y las ediciones en vivo del guion <strong>no funcionan</strong>. Solo scroll y controles locales.</div>
+      <div>In offline mode, producer signals and live script edits <strong>do not work</strong>. Only scroll and local controls.</div>
     </div>
   </section>
 
@@ -736,96 +736,96 @@
   <!-- ============================================================ -->
 
   <section id="integration">
-    <h2>Test integrado &mdash; Flujo completo</h2>
-    <p>Este test simula un show real de principio a fin. Requiere las 3 personas/roles activas simultaneamente.</p>
+    <h2>Integration Test &mdash; Full Flow</h2>
+    <p>This test simulates a real show from start to finish. Requires all 3 roles active simultaneously.</p>
 
     <div class="callout callout-info">
       <span class="callout-icon">&#9432;</span>
-      <div>Si solo hay 1 persona, abrir 3 ventanas/dispositivos: una como productor (Go Live), otra con el Automator, y otra con el prompter.</div>
+      <div>If only 1 person is available, open 3 windows/devices: one as producer (Go Live), one with the Automator, and one with the prompter.</div>
     </div>
 
     <ol class="steps">
       <li>
-        <strong>Productor: Verificar que el show esta en Ready y el rundown esta completo</strong>
-        Abrir <code>/shows/{id}/live</code> (panel Go Live). Verificar que se ven todos los bloques en la lista izquierda.
+        <strong>Producer: Verify the show is Ready and the rundown is complete</strong>
+        Open <code>/shows/{id}/live</code> (Go Live panel). Verify all blocks are visible in the left list.
       </li>
       <li>
-        <strong>Operador: Conectar el Automator al show</strong>
-        Verificar conexion a servidor y vMix. Correr pre-flight. Confirmar media sincronizada.
+        <strong>Operator: Connect the Automator to the show</strong>
+        Verify connection to server and vMix. Run pre-flight. Confirm media is synced.
       </li>
       <li>
-        <strong>Host: Abrir el prompter</strong>
-        Navegar a <code>/shows/{id}/prompter</code>. Presionar <kbd>F</kbd> para fullscreen. Activar auto-scroll con <kbd>Space</kbd>.
+        <strong>Host: Open the prompter</strong>
+        Navigate to <code>/shows/{id}/prompter</code>. Press <kbd>F</kbd> for fullscreen. Enable auto-scroll with <kbd>Space</kbd>.
       </li>
       <li>
-        <strong>Productor: Pasar a Rehearsal</strong>
-        Desde Go Live, activar REHEARSAL. Verificar que Automator y prompter reflejan el cambio de estado.
+        <strong>Producer: Switch to Rehearsal</strong>
+        From Go Live, activate REHEARSAL. Verify the Automator and prompter reflect the status change.
       </li>
       <li>
-        <strong>Operador: Hacer un ensayo rapido</strong>
-        Presionar <kbd>Space</kbd> para avanzar al bloque 1. Cue un par de elementos. Verificar que vMix responde. STOP + RESET.
+        <strong>Operator: Do a quick rehearsal</strong>
+        Press <kbd>Space</kbd> to advance to block 1. Cue a couple of elements. Verify vMix responds. STOP + RESET.
       </li>
       <li>
-        <strong>Productor: Go Live</strong>
-        Presionar F5 o boton "GO LIVE". Verificar badge rojo "LIVE" en todos los paneles.
+        <strong>Producer: Go Live</strong>
+        Press F5 or the "GO LIVE" button. Verify the red "LIVE" badge on all panels.
       </li>
       <li>
-        <strong>Operador: Ejecutar bloque 1</strong>
-        <kbd>Space</kbd> para empezar. Hacer CUE de los elementos del bloque. Verificar clips, graficos y lower thirds en vMix.
+        <strong>Operator: Execute block 1</strong>
+        <kbd>Space</kbd> to start. CUE the elements in the block. Verify clips, graphics and lower thirds in vMix.
       </li>
       <li>
-        <strong>Productor: Enviar senal al talento</strong>
-        Enviar un countdown de 30 segundos. Verificar que el host lo ve en el prompter.
+        <strong>Producer: Send a signal to talent</strong>
+        Send a 30-second countdown. Verify the host sees it in the prompter.
       </li>
       <li>
-        <strong>Operador: Avanzar al bloque 2</strong>
-        <kbd>Space</kbd>. Verificar que el bloque anterior se marca como "done" con badge over/under.
+        <strong>Operator: Advance to block 2</strong>
+        <kbd>Space</kbd>. Verify the previous block is marked as "done" with an over/under badge.
       </li>
       <li>
-        <strong>Productor: Monitorear timers</strong>
-        Verificar show elapsed, block elapsed, block remaining. Verificar back-times de bloques futuros.
+        <strong>Producer: Monitor timers</strong>
+        Verify show elapsed, block elapsed, block remaining. Verify back-times on future blocks.
       </li>
       <li>
-        <strong>Productor: Enviar WRAP al talento</strong>
-        Enviar senal WRAP. Verificar overlay rojo parpadeante en prompter. Cancelar el WRAP.
+        <strong>Producer: Send WRAP to talent</strong>
+        Send a WRAP signal. Verify the blinking red overlay on the prompter. Clear the WRAP.
       </li>
       <li>
-        <strong>Operador: Completar el show</strong>
-        Avanzar por todos los bloques restantes. Ejecutar al menos 1 elemento por bloque.
+        <strong>Operator: Complete the show</strong>
+        Advance through all remaining blocks. Execute at least 1 element per block.
       </li>
       <li>
-        <strong>Productor: Detener el show</strong>
-        Presionar STOP o <kbd>Esc</kbd>. Verificar que vuelve a estado Ready. Revisar el execution log.
+        <strong>Producer: Stop the show</strong>
+        Press STOP or <kbd>Esc</kbd>. Verify it returns to Ready state. Review the execution log.
       </li>
     </ol>
   </section>
 
   <section id="edge-cases">
-    <h2>Casos borde</h2>
-    <p>Tests opcionales para situaciones limites:</p>
+    <h2>Edge Cases</h2>
+    <p>Optional tests for edge scenarios:</p>
 
     <ul class="checklist" data-group="edge-cases">
-      <li><strong>Edicion en vivo</strong>: mientras el show esta Live, editar el guion de un bloque futuro desde el editor &rarr; verificar que el prompter actualiza el texto</li>
-      <li><strong>Edicion en vivo (campos GT)</strong>: cambiar el texto de un lower third en un bloque futuro &rarr; verificar que el nuevo texto aparece cuando se hace CUE</li>
-      <li><strong>Desconexion del Automator</strong>: cerrar el Automator durante un show live &rarr; verificar que el productor ve la desconexion en Go Live</li>
-      <li><strong>Reconexion del Automator</strong>: reconectar el Automator &rarr; verificar que sincroniza estado y rundown</li>
-      <li><strong>Multiples tabs</strong>: en el Automator, abrir un segundo show en otra tab (boton "+") &rarr; verificar que cada tab opera independiente</li>
-      <li><strong>Template</strong>: guardar el show como template desde Home &rarr; crear un nuevo show desde ese template &rarr; verificar que todos los bloques y elementos se copian (sin media)</li>
-      <li><strong>Bloque overrun</strong>: dejar que un bloque dure mas de su duracion estimada &rarr; verificar que el timer cambia de verde a rojo y que el badge muestra <span style="color:#f87171">+X:XX</span></li>
-      <li><strong>Archivado</strong>: pasar el show de Ready a Archived &rarr; verificar que queda read-only y que el Automator no puede conectarse</li>
+      <li><strong>Live editing</strong>: while the show is Live, edit the script of a future block from the editor &rarr; verify the prompter updates the text</li>
+      <li><strong>Live editing (GT fields)</strong>: change the text of a lower third on a future block &rarr; verify the new text appears when CUE'd</li>
+      <li><strong>Automator disconnection</strong>: close the Automator during a live show &rarr; verify the producer sees the disconnection in Go Live</li>
+      <li><strong>Automator reconnection</strong>: reconnect the Automator &rarr; verify it syncs state and rundown</li>
+      <li><strong>Multiple tabs</strong>: in the Automator, open a second show in another tab ("+" button) &rarr; verify each tab operates independently</li>
+      <li><strong>Template</strong>: save the show as a template from Home &rarr; create a new show from that template &rarr; verify all blocks and elements are copied (without media)</li>
+      <li><strong>Block overrun</strong>: let a block run past its estimated duration &rarr; verify the timer changes from green to red and the badge shows <span style="color:#f87171">+X:XX</span></li>
+      <li><strong>Archive</strong>: set the show from Ready to Archived &rarr; verify it becomes read-only and the Automator cannot connect</li>
     </ul>
   </section>
 
   <section id="result">
-    <h2>Resultado del test</h2>
+    <h2>Test Result</h2>
 
     <div class="card" style="text-align: center; padding: 32px;">
-      <p style="font-size: 1.1rem; margin-bottom: 16px;">Progreso total</p>
+      <p style="font-size: 1.1rem; margin-bottom: 16px;">Overall Progress</p>
       <div style="font-size: 3rem; font-weight: 700; color: #fff;" id="finalScore">0%</div>
-      <p style="color: #6a6a80; margin-top: 8px;" id="finalCount">0 de 0 items completados</p>
+      <p style="color: #6a6a80; margin-top: 8px;" id="finalCount">0 of 0 items completed</p>
       <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-        <button onclick="resetAll()" style="padding: 8px 20px; background: #1c1c30; border: 1px solid #2a2a4a; color: #8888a0; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">Reset todo</button>
-        <button onclick="window.print()" style="padding: 8px 20px; background: #1e3a5f; border: 1px solid #2a4a7f; color: #60a5fa; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">Imprimir / PDF</button>
+        <button onclick="resetAll()" style="padding: 8px 20px; background: #1c1c30; border: 1px solid #2a2a4a; color: #8888a0; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">Reset All</button>
+        <button onclick="window.print()" style="padding: 8px 20px; background: #1e3a5f; border: 1px solid #2a4a7f; color: #60a5fa; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">Print / PDF</button>
       </div>
     </div>
   </section>
@@ -835,7 +835,7 @@
 
 <footer>
   <p>OpenDirector &mdash; Open-source live TV production system</p>
-  <p style="margin-top: 6px;"><a href="/instructions.html">Manual de usuario</a> &middot; <a href="/">Volver a OpenDirector</a></p>
+  <p style="margin-top: 6px;"><a href="/instructions.html">User Manual</a> &middot; <a href="/">Back to OpenDirector</a></p>
 </footer>
 
 <script>
@@ -865,7 +865,6 @@
     const done = checked.length;
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
-    // Progress bar
     const container = document.getElementById('progress');
     const fill = document.getElementById('progressFill');
     const text = document.getElementById('progressText');
@@ -879,10 +878,10 @@
     }
 
     fill.style.width = pct + '%';
-    text.textContent = `${done} / ${total} completados (${pct}%)`;
+    text.textContent = `${done} / ${total} completed (${pct}%)`;
     score.textContent = pct + '%';
     score.style.color = pct === 100 ? '#4ade80' : pct > 50 ? '#facc15' : '#fff';
-    count.textContent = `${done} de ${total} items completados`;
+    count.textContent = `${done} of ${total} items completed`;
   }
 
   function initChecklist() {
@@ -910,7 +909,7 @@
   }
 
   function resetAll() {
-    if (!confirm('Resetear todos los checks? Esta accion no se puede deshacer.')) return;
+    if (!confirm('Reset all checks? This action cannot be undone.')) return;
     localStorage.removeItem(STORAGE_KEY);
     document.querySelectorAll('.checklist li.checked').forEach(li => li.classList.remove('checked'));
     updateProgress();
