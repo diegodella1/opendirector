@@ -130,24 +130,25 @@ function updateTab(tabs: Map<string, ShowTab>, showId: string, patch: Partial<Sh
 // ── Store ───────────────────────────────────────────────────────────
 
 export const useAutomatorStore = create<AutomatorState>((set, get) => ({
-  serverUrl: 'http://100.92.92.27:3000',
-  vmixHost: '127.0.0.1',
-  vmixPort: 8099,
+  serverUrl: localStorage.getItem('od_serverUrl') || '',
+  vmixHost: localStorage.getItem('od_vmixHost') || '127.0.0.1',
+  vmixPort: parseInt(localStorage.getItem('od_vmixPort') || '8099'),
   vmixConnected: false,
   serverConnected: false,
   shows: [],
-  mediaFolder: 'C:\\OpenDirector\\Media',
+  mediaFolder: localStorage.getItem('od_mediaFolder') || 'C:\\OpenDirector\\Media',
   tally: { program: null, preview: null },
   tabs: new Map(),
   activeTabId: null,
 
   // ── Global actions ──────────────────────────────────────────────
 
-  setServerUrl: (url) => set({ serverUrl: url }),
-  setVmixHost: (host) => set({ vmixHost: host }),
-  setVmixPort: (port) => set({ vmixPort: port }),
+  setServerUrl: (url) => { localStorage.setItem('od_serverUrl', url); set({ serverUrl: url }); },
+  setVmixHost: (host) => { localStorage.setItem('od_vmixHost', host); set({ vmixHost: host }); },
+  setVmixPort: (port) => { localStorage.setItem('od_vmixPort', String(port)); set({ vmixPort: port }); },
 
   setMediaFolder: (folder) => {
+    localStorage.setItem('od_mediaFolder', folder);
     set({ mediaFolder: folder });
     setMediaFolderApi(folder).catch(() => {});
   },

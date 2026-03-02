@@ -9,8 +9,8 @@ export function ConnectionScreen() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    loadShows();
-  }, [loadShows]);
+    if (serverUrl) loadShows();
+  }, [serverUrl, loadShows]);
 
   const handleConnect = async () => {
     if (!selectedShowId) {
@@ -40,7 +40,8 @@ export function ConnectionScreen() {
           type="text"
           value={serverUrl}
           onChange={(e) => { setServerUrl(e.target.value); }}
-          onBlur={() => loadShows()}
+          onBlur={() => { if (serverUrl) loadShows(); }}
+          placeholder="http://192.168.1.100:3000"
           className="w-full px-3 py-2 bg-od-bg border border-od-surface-light rounded text-white text-sm mb-4 focus:outline-none focus:border-od-accent"
         />
 
