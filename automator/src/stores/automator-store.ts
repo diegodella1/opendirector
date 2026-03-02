@@ -1095,29 +1095,37 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
 
 // ── Hook helper for components ──────────────────────────────────────
 
+// Stable empty references — avoids infinite re-renders with useShallow
+// ([] !== [] on every selector call when no tab is active)
+const EMPTY_BLOCKS: Block[] = [];
+const EMPTY_GT: GtTemplate[] = [];
+const EMPTY_LOG: LogEntry[] = [];
+const EMPTY_TIMINGS: Record<string, BlockTiming> = {};
+const EMPTY_MEDIA: MediaSyncState[] = [];
+
 export function useActiveShowState() {
   return useAutomatorStore(useShallow(s => {
     const tab = s.activeTabId ? s.tabs.get(s.activeTabId) : null;
     return {
       show: tab?.show ?? null,
       config: tab?.config ?? null,
-      blocks: tab?.blocks ?? [],
-      gtTemplates: tab?.gtTemplates ?? [],
+      blocks: tab?.blocks ?? EMPTY_BLOCKS,
+      gtTemplates: tab?.gtTemplates ?? EMPTY_GT,
       currentBlockIdx: tab?.currentBlockIdx ?? 0,
       selectedElementId: tab?.selectedElementId ?? null,
-      executionLog: tab?.executionLog ?? [],
+      executionLog: tab?.executionLog ?? EMPTY_LOG,
       executionMode: tab?.executionMode ?? ('manual' as const),
       requestedElementId: tab?.requestedElementId ?? null,
       showStartedAt: tab?.showStartedAt ?? null,
       blockStartedAt: tab?.blockStartedAt ?? null,
-      blockTimings: tab?.blockTimings ?? {},
+      blockTimings: tab?.blockTimings ?? EMPTY_TIMINGS,
       currentClipPool: tab?.currentClipPool ?? ('a' as const),
       clipPosition: tab?.clipPosition ?? null,
       preflightResults: tab?.preflightResults ?? null,
       preflightLoading: tab?.preflightLoading ?? false,
       preflightError: tab?.preflightError ?? null,
       wsConnected: tab?.wsConnected ?? false,
-      mediaSyncStatus: tab?.mediaSyncStatus ?? [],
+      mediaSyncStatus: tab?.mediaSyncStatus ?? EMPTY_MEDIA,
     };
   }));
 }
