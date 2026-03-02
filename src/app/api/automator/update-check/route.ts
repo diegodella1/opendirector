@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getLatestRelease, compareVersions } from '@/lib/github-releases';
+export const dynamic = 'force-dynamic';
 
 // GET /api/automator/update-check?currentVersion=X.Y.Z
 export async function GET(request: NextRequest) {

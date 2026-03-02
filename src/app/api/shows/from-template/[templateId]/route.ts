@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { readFile } from 'fs/promises';
 import path from 'path';
 import type { TemplateSnapshot } from '@/lib/types';
+export const dynamic = 'force-dynamic';
 
 // POST /api/shows/from-template/:templateId — create a new show from a template
 export async function POST(

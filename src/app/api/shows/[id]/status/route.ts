@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { validateTransition } from '@/lib/state-machine';
 import type { ShowStatus } from '@/lib/types';
+export const dynamic = 'force-dynamic';
 
 // PUT /api/shows/:id/status — change show status with state machine validation
 export async function PUT(

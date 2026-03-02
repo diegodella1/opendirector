@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getLatestRelease } from '@/lib/github-releases';
+export const dynamic = 'force-dynamic';
 
 // GET /api/automator/download → 302 redirect to MSI on GitHub Releases
 export async function GET() {

@@ -4,6 +4,7 @@ import { ensureMediaDir, extractMetadata, generateThumbnail, calculateChecksum, 
 import { randomUUID } from 'crypto';
 import { writeFile } from 'fs/promises';
 import path from 'path';
+export const dynamic = 'force-dynamic';
 
 // GET /api/shows/:id/media — list media files
 export async function GET(

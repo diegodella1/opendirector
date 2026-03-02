@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { applyData, recordUndoEntry } from '@/lib/undo';
+export const dynamic = 'force-dynamic';
 
 // POST /api/shows/:id/redo — apply forward_data, create new undo entry
 export async function POST(

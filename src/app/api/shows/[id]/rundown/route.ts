@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+export const dynamic = 'force-dynamic';
 
 // GET /api/shows/:id/rundown — full rundown (show + config + blocks + elements + actions)
 export async function GET(

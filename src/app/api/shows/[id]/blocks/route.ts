@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { rejectIfLive } from '@/lib/state-machine';
 import { recordUndoEntry } from '@/lib/undo';
+export const dynamic = 'force-dynamic';
 
 // GET /api/shows/:id/blocks
 export async function GET(

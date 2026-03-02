@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { stat, createReadStream } from 'fs';
 import { promisify } from 'util';
 import path from 'path';
+export const dynamic = 'force-dynamic';
 
 const statAsync = promisify(stat);
 

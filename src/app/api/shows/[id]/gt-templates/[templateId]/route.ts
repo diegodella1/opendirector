@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+export const dynamic = 'force-dynamic';
 
 // PUT /api/shows/:id/gt-templates/:templateId — update GT template
 export async function PUT(

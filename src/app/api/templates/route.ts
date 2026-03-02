@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import type { TemplateSnapshot } from '@/lib/types';
+export const dynamic = 'force-dynamic';
 
 // GET /api/templates — list all templates
 export async function GET() {

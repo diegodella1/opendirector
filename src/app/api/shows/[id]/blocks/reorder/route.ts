@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { rejectIfLive } from '@/lib/state-machine';
 import { recordUndoEntry } from '@/lib/undo';
+export const dynamic = 'force-dynamic';
 
 // PUT /api/shows/:id/blocks/reorder — reorder blocks by ID array
 export async function PUT(
