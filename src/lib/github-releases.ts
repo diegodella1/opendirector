@@ -58,7 +58,7 @@ export async function getLatestRelease(): Promise<AutomatorRelease | null> {
       `https://api.github.com/repos/${REPO}/releases?per_page=20`,
       {
         headers: { Accept: 'application/vnd.github+json' },
-        next: { revalidate: 300 },
+        cache: 'no-store',
       }
     );
 
