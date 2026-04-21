@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { appPath } from '@/lib/app-path';
 import type { GtTemplate, GtTemplateField } from '@/lib/types';
 
 interface GtTemplateManagerProps {
@@ -74,7 +75,7 @@ export default function GtTemplateManager({
     };
 
     if (editingId) {
-      const res = await fetch(`/api/shows/${showId}/gt-templates/${editingId}`, {
+      const res = await fetch(appPath(`/api/shows/${showId}/gt-templates/${editingId}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -85,7 +86,7 @@ export default function GtTemplateManager({
         resetForm();
       }
     } else {
-      const res = await fetch(`/api/shows/${showId}/gt-templates`, {
+      const res = await fetch(appPath(`/api/shows/${showId}/gt-templates`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -99,7 +100,7 @@ export default function GtTemplateManager({
   };
 
   const handleDelete = async (id: string) => {
-    const res = await fetch(`/api/shows/${showId}/gt-templates/${id}`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/gt-templates/${id}`), {
       method: 'DELETE',
     });
     if (res.ok) {

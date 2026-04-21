@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { appPath } from '@/lib/app-path';
 import { useLiveStore } from '@/stores/live-store';
 import SignalPanel from '@/components/SignalPanel';
 import {
@@ -531,7 +532,7 @@ export default function LivePage() {
                 Execution Log
               </h3>
               <a
-                href={`/api/shows/${showId}/execution-log/export`}
+                href={appPath(`/api/shows/${showId}/execution-log/export`)}
                 download
                 className="text-[10px] px-2 py-0.5 bg-od-surface-light text-od-text-dim rounded hover:text-white transition-colors"
               >

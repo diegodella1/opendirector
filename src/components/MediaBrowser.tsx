@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { appPath } from '@/lib/app-path';
 import type { MediaFile } from '@/lib/types';
 import MediaUpload from './MediaUpload';
 
@@ -36,7 +37,7 @@ export default function MediaBrowser({ showId }: MediaBrowserProps) {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const fetchMedia = useCallback(async () => {
-    const res = await fetch(`/api/shows/${showId}/media`);
+    const res = await fetch(appPath(`/api/shows/${showId}/media`));
     if (res.ok) {
       setMedia(await res.json());
     }
@@ -59,7 +60,7 @@ export default function MediaBrowser({ showId }: MediaBrowserProps) {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this media file?')) return;
-    const res = await fetch(`/api/media/${id}`, { method: 'DELETE' });
+    const res = await fetch(appPath(`/api/media/${id}`), { method: 'DELETE' });
     if (res.ok) {
       setMedia((prev) => prev.filter((m) => m.id !== id));
     }
@@ -125,7 +126,7 @@ export default function MediaBrowser({ showId }: MediaBrowserProps) {
                 {m.thumbnail_path ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
-                    src={`/api/shows/${showId}/media/thumb/${m.id}`}
+                    src={appPath(`/api/shows/${showId}/media/thumb/${m.id}`)}
                     alt={m.original_name}
                     className="w-full h-full object-cover"
                     onError={(e) => {

@@ -4,9 +4,17 @@ const { randomUUID } = require('crypto');
 const next = require('next');
 const { WebSocketServer } = require('ws');
 
+function normalizeBasePath(path) {
+  if (!path || path === '/') return '';
+  const withLeadingSlash = path.startsWith('/') ? path : `/${path}`;
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash.slice(0, -1) : withLeadingSlash;
+}
+
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
 const port = parseInt(process.env.PORT || '3000', 10);
+const basePath = normalizeBasePath(process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || '');
+const wsPath = `${basePath}/ws`;
 
 // Execution event types that should be persisted
 const LOGGABLE_EXEC_TYPES = new Set([
@@ -90,7 +98,7 @@ app.prepare().then(() => {
 
   server.on('upgrade', (request, socket, head) => {
     const { pathname } = parse(request.url, true);
-    if (pathname === '/ws') {
+    if (pathname === wsPath || pathname === '/ws') {
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit('connection', ws, request);
       });
@@ -190,6 +198,6 @@ app.prepare().then(() => {
 
   server.listen(port, hostname, () => {
     console.log(`> OpenDirector ready on http://${hostname}:${port}`);
-    console.log(`> WebSocket available at ws://${hostname}:${port}/ws`);
+    console.log(`> WebSocket available at ws://${hostname}:${port}${wsPath || '/ws'}`);
   });
 });

@@ -6,6 +6,46 @@ const IS_TAURI = typeof window !== 'undefined' && '__TAURI__' in window;
 let tauriInvoke: ((cmd: string, args?: Record<string, unknown>) => Promise<unknown>) | null = null;
 let tauriListen: ((event: string, handler: (e: { payload: unknown }) => void) => Promise<() => void>) | null = null;
 
+type VmixAction = {
+  id?: string;
+  phase?: string;
+  step_label?: string | null;
+  vmix_function: string;
+  vmix_input?: string | null;
+  vmix_params?: Record<string, string> | null;
+  delay_ms?: number;
+};
+
+type ActionResult = {
+  ok: boolean;
+  latency_ms?: number;
+  latencyMs?: number;
+};
+
+type ExecutionSummary = {
+  ok: boolean;
+  latencyMs: number;
+};
+
+function summarizeActionResults(raw: unknown): ExecutionSummary {
+  if (!Array.isArray(raw)) {
+    const result = raw as Partial<ExecutionSummary> | null;
+    return {
+      ok: Boolean(result?.ok),
+      latencyMs: typeof result?.latencyMs === 'number' ? result.latencyMs : 0,
+    };
+  }
+
+  const results = raw as ActionResult[];
+  return {
+    ok: results.length > 0 && results.every((result) => result.ok),
+    latencyMs: results.reduce((total, result) => {
+      const latency = result.latencyMs ?? result.latency_ms ?? 0;
+      return total + latency;
+    }, 0),
+  };
+}
+
 // Lazy load Tauri APIs
 async function getInvoke() {
   if (tauriInvoke) return tauriInvoke;
@@ -98,14 +138,7 @@ export function connectWebSocket(serverUrl: string, showId: string) {
 // Actions use Rust engine format: vmix_input + vmix_params (not target/field/value)
 export async function executeCue(
   elementId: string,
-  actions: Array<{
-    id?: string;
-    phase?: string;
-    vmix_function: string;
-    vmix_input?: string | null;
-    vmix_params?: Record<string, string> | null;
-    delay_ms?: number;
-  }>,
+  actions: VmixAction[],
   config?: {
     clip_pool_a_key?: string | null;
     clip_pool_b_key?: string | null;
@@ -116,16 +149,45 @@ export async function executeCue(
 ): Promise<{ ok: boolean; latencyMs: number }> {
   const invoke = await getInvoke();
   if (invoke) {
-    return invoke('execute_cue', {
+    const results = await invoke('execute_cue', {
       args: {
         element_id: elementId,
         actions,
         config: config || {},
       },
-    }) as Promise<{ ok: boolean; latencyMs: number }>;
+    });
+    return summarizeActionResults(results);
   }
   // Mock: simulate execution
   console.log(`[MOCK] CUE element ${elementId}:`, actions.map(a => a.vmix_function).join(' → '));
+  return { ok: true, latencyMs: 3 };
+}
+
+export async function executeStep(
+  elementId: string,
+  stepLabel: string,
+  actions: VmixAction[],
+  config?: {
+    clip_pool_a_key?: string | null;
+    clip_pool_b_key?: string | null;
+    gfx_pool_key?: string | null;
+    dsk_key?: string | null;
+    stinger_index?: number | null;
+  } | null
+): Promise<{ ok: boolean; latencyMs: number }> {
+  const invoke = await getInvoke();
+  if (invoke) {
+    const results = await invoke('execute_step', {
+      args: {
+        element_id: elementId,
+        step_label: stepLabel,
+        actions,
+        config: config || {},
+      },
+    });
+    return summarizeActionResults(results);
+  }
+  console.log(`[MOCK] STEP ${stepLabel} for element ${elementId}:`, actions.map(a => a.vmix_function).join(' → '));
   return { ok: true, latencyMs: 3 };
 }
 

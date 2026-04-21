@@ -58,6 +58,9 @@ if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
   echo "JWT generated."
 fi
 
+# --- Ensure media/template directories exist ---
+mkdir -p /app/data/templates /app/data/shows
+
 # --- Start the application ---
 echo "Starting OpenDirector..."
 exec node server.js

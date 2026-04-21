@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import { appPath, appWsUrl } from '@/lib/app-path';
 import type { PrompterConfig, Signal } from '@/lib/types';
 
 interface BlockScript {
@@ -84,7 +85,7 @@ export default function PrompterPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`/api/shows/${showId}/rundown`);
+        const res = await fetch(appPath(`/api/shows/${showId}/rundown`));
         if (!res.ok) throw new Error('fetch failed');
         const data = await res.json();
         setShowName(data.show.name);
@@ -121,8 +122,7 @@ export default function PrompterPage() {
 
   // WebSocket for live script updates + signals + scroll sync
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    const ws = new WebSocket(appWsUrl('/ws'));
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -210,7 +210,7 @@ export default function PrompterPage() {
         countdownTimerRef.current = null;
       }
     };
-  }, [showId]);
+  }, [showId, scrollSyncMode]);
 
   // Auto-scroll + master sync broadcast
   useEffect(() => {
@@ -298,7 +298,7 @@ export default function PrompterPage() {
 
   // Save config
   const saveConfig = async (updates: Partial<PrompterConfig>) => {
-    await fetch(`/api/shows/${showId}/prompter-config`, {
+    await fetch(appPath(`/api/shows/${showId}/prompter-config`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),

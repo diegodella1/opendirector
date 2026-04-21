@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import type { Show, ShowConfig, Block, LogEntry, TallyState, Action, MediaSyncState, GtTemplate, ClipPosition } from '@/lib/types';
-import { fetchRundown, fetchShows, connectWebSocket, executeCue, connectVmix, syncMedia, getMediaSyncStatus, setMediaFolder as setMediaFolderApi, loadCachedRundown, listenEvent, registerTimecodeTriggers, clearTimecodeTriggers, checkTimecodeTriggers, runPreflightCheck, setActiveShow } from '@/lib/tauri-api';
+import { fetchRundown, fetchShows, connectWebSocket, executeCue, executeStep as executeStepApi, connectVmix, syncMedia, getMediaSyncStatus, setMediaFolder as setMediaFolderApi, loadCachedRundown, listenEvent, registerTimecodeTriggers, clearTimecodeTriggers, checkTimecodeTriggers, runPreflightCheck, setActiveShow } from '@/lib/tauri-api';
 import type { PreflightCheck } from '@/lib/tauri-api';
 import type { BlockTiming } from '@/lib/timing';
 
@@ -601,6 +601,7 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       return {
         id: a.id,
         phase: a.phase,
+        step_label: a.step_label,
         vmix_function: a.vmix_function,
         vmix_input: resolveVar(a.target, config, currentClipPool),
         vmix_params: Object.keys(vmixParams).length > 0 ? vmixParams : null,
@@ -669,6 +670,7 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
       return {
         id: a.id,
         phase: a.phase,
+        step_label: a.step_label,
         vmix_function: a.vmix_function,
         vmix_input: resolveVar(a.target, config, currentClipPool),
         vmix_params: Object.keys(vmixParams).length > 0 ? vmixParams : null,
@@ -678,7 +680,7 @@ export const useAutomatorStore = create<AutomatorState>((set, get) => ({
 
     const idempotencyKey = crypto.randomUUID();
     const rustConfig = config ? { clip_pool_a_key: config.clip_pool_a_key, clip_pool_b_key: config.clip_pool_b_key } : null;
-    const result = await executeCue(elementId, resolvedActions, rustConfig);
+    const result = await executeStepApi(elementId, stepLabel, resolvedActions, rustConfig);
 
     if (ws) {
       const seq = (get().tabs.get(activeTabId)?.seqCounter ?? 0) + 1;

@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { appPath, appWsUrl } from '@/lib/app-path';
 import type { Show, Block, Element, Action, GtTemplate } from '@/lib/types';
 
 interface ElementWithActions extends Element {
@@ -65,14 +66,14 @@ export const useRundownStore = create<RundownState>((set, get) => ({
   wsConnected: false,
 
   loadRundown: async (showId) => {
-    const res = await fetch(`/api/shows/${showId}/rundown`);
+    const res = await fetch(appPath(`/api/shows/${showId}/rundown`));
     if (!res.ok) return;
     const data = await res.json();
     set({ show: data.show, blocks: data.blocks, gtTemplates: data.gt_templates || [] });
   },
 
   addBlock: async (showId, name) => {
-    const res = await fetch(`/api/shows/${showId}/blocks`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/blocks`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
@@ -88,7 +89,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
   },
 
   updateBlock: async (showId, blockId, changes) => {
-    const res = await fetch(`/api/shows/${showId}/blocks/${blockId}`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/blocks/${blockId}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(changes),
@@ -103,7 +104,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
   },
 
   deleteBlock: async (showId, blockId) => {
-    const res = await fetch(`/api/shows/${showId}/blocks/${blockId}`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/blocks/${blockId}`), {
       method: 'DELETE',
     });
     if (!res.ok) return;
@@ -116,7 +117,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
 
   addElement: async (showId, blockId, element) => {
     const res = await fetch(
-      `/api/shows/${showId}/blocks/${blockId}/elements`,
+      appPath(`/api/shows/${showId}/blocks/${blockId}/elements`),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -138,7 +139,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
 
   updateElement: async (showId, blockId, elementId, changes) => {
     const res = await fetch(
-      `/api/shows/${showId}/blocks/${blockId}/elements/${elementId}`,
+      appPath(`/api/shows/${showId}/blocks/${blockId}/elements/${elementId}`),
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -163,7 +164,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
 
   deleteElement: async (showId, blockId, elementId) => {
     const res = await fetch(
-      `/api/shows/${showId}/blocks/${blockId}/elements/${elementId}`,
+      appPath(`/api/shows/${showId}/blocks/${blockId}/elements/${elementId}`),
       {
         method: 'DELETE',
       }
@@ -190,7 +191,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
         .filter(Boolean) as BlockWithElements[];
       return { blocks: reordered };
     });
-    await fetch(`/api/shows/${showId}/blocks/reorder`, {
+    await fetch(appPath(`/api/shows/${showId}/blocks/reorder`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ order }),
@@ -212,7 +213,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
         return { ...b, elements: reordered };
       }),
     }));
-    await fetch(`/api/shows/${showId}/blocks/${blockId}/elements/reorder`, {
+    await fetch(appPath(`/api/shows/${showId}/blocks/${blockId}/elements/reorder`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ order }),
@@ -221,7 +222,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
 
   addAction: async (showId, blockId, elementId, action) => {
     const res = await fetch(
-      `/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions`,
+      appPath(`/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions`),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -250,7 +251,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
 
   updateAction: async (showId, blockId, elementId, actionId, changes) => {
     const res = await fetch(
-      `/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions/${actionId}`,
+      appPath(`/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions/${actionId}`),
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -277,7 +278,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
 
   deleteAction: async (showId, blockId, elementId, actionId) => {
     const res = await fetch(
-      `/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions/${actionId}`,
+      appPath(`/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions/${actionId}`),
       {
         method: 'DELETE',
       }
@@ -321,7 +322,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
       ),
     }));
     await fetch(
-      `/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions/reorder`,
+      appPath(`/api/shows/${showId}/blocks/${blockId}/elements/${elementId}/actions/reorder`),
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -331,7 +332,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
   },
 
   undo: async (showId) => {
-    const res = await fetch(`/api/shows/${showId}/undo`, { method: 'POST' });
+    const res = await fetch(appPath(`/api/shows/${showId}/undo`), { method: 'POST' });
     if (!res.ok) return;
     const { actionType, forwardData, reverseData } = await res.json();
     // Push to redo stack
@@ -346,7 +347,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
     const { redoStack } = get();
     if (redoStack.length === 0) return;
     const entry = redoStack[redoStack.length - 1];
-    const res = await fetch(`/api/shows/${showId}/redo`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/redo`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(entry),
@@ -368,9 +369,7 @@ export const useRundownStore = create<RundownState>((set, get) => ({
     const { ws: existingWs } = get();
     if (existingWs) existingWs.close();
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const ws = new WebSocket(wsUrl);
+    const ws = new WebSocket(appWsUrl('/ws'));
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: 'join', payload: { showId } }));

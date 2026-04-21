@@ -7,6 +7,9 @@ RUN npm ci
 # Stage 2: Build Next.js
 FROM node:20-alpine AS builder
 WORKDIR /app
+ARG BASE_PATH=
+ENV BASE_PATH=$BASE_PATH
+ENV NEXT_PUBLIC_BASE_PATH=$BASE_PATH
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json next.config.mjs tsconfig.json postcss.config.mjs tailwind.config.ts ./
 COPY src ./src
@@ -23,6 +26,9 @@ WORKDIR /app
 RUN apk add --no-cache ffmpeg postgresql-client
 
 ENV NODE_ENV=production
+ARG BASE_PATH=
+ENV BASE_PATH=$BASE_PATH
+ENV NEXT_PUBLIC_BASE_PATH=$BASE_PATH
 
 # Copy built application
 COPY --from=builder /app/.next ./.next

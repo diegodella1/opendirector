@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
-import { writeFile } from 'fs/promises';
+import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import type { TemplateSnapshot } from '@/lib/types';
 export const dynamic = 'force-dynamic';
@@ -125,7 +125,9 @@ export async function POST(request: Request) {
 
   // Write JSON file
   const filename = `custom-${randomUUID()}.json`;
-  const filePath = path.join(process.cwd(), 'data', 'templates', filename);
+  const templatesDir = path.join(process.cwd(), 'data', 'templates');
+  await mkdir(templatesDir, { recursive: true });
+  const filePath = path.join(templatesDir, filename);
   await writeFile(filePath, JSON.stringify(snapshot, null, 2));
 
   // Insert metadata

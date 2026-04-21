@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { appPath } from '@/lib/app-path';
 import type { Person } from '@/lib/types';
 
 interface Props {
@@ -13,7 +14,7 @@ export default function PeoplePanel({ showId }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const loadPeople = useCallback(async () => {
-    const res = await fetch(`/api/shows/${showId}/people`);
+    const res = await fetch(appPath(`/api/shows/${showId}/people`));
     if (res.ok) {
       setPeople(await res.json());
     }
@@ -24,7 +25,7 @@ export default function PeoplePanel({ showId }: Props) {
   }, [loadPeople]);
 
   const handleAdd = useCallback(async () => {
-    const res = await fetch(`/api/shows/${showId}/people`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/people`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: 'New Person' }),
@@ -37,7 +38,7 @@ export default function PeoplePanel({ showId }: Props) {
   }, [showId]);
 
   const handleUpdate = useCallback(async (personId: string, changes: Partial<Person>) => {
-    const res = await fetch(`/api/shows/${showId}/people/${personId}`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/people/${personId}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(changes),
@@ -49,7 +50,7 @@ export default function PeoplePanel({ showId }: Props) {
   }, [showId]);
 
   const handleDelete = useCallback(async (personId: string) => {
-    const res = await fetch(`/api/shows/${showId}/people/${personId}`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/people/${personId}`), {
       method: 'DELETE',
     });
     if (res.ok) {

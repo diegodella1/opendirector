@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { appPath } from '@/lib/app-path';
 
 type MediaCategory = 'auto' | 'clip' | 'stinger' | 'graphic' | 'lower_third' | 'audio';
 
@@ -36,7 +37,7 @@ export default function MediaUpload({ showId, onUploadComplete }: MediaUploadPro
     }
 
     try {
-      const res = await fetch(`/api/shows/${showId}/media`, {
+      const res = await fetch(appPath(`/api/shows/${showId}/media`), {
         method: 'POST',
         body: formData,
       });

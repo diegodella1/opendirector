@@ -93,6 +93,8 @@ docker compose up -d
 
 OpenDirector is now running at **http://localhost:3000**.
 
+For an operator-facing walkthrough in Spanish, see [MANUAL_DE_USO.md](./MANUAL_DE_USO.md).
+
 ### Environment Variables (optional)
 
 | Variable | Default | Description |
@@ -100,6 +102,7 @@ OpenDirector is now running at **http://localhost:3000**.
 | `PORT` | `3000` | Server port |
 | `DB_PASSWORD` | `opendirector` | PostgreSQL password |
 | `JWT_SECRET` | (built-in default) | JWT secret shared with PostgREST |
+| `BASE_PATH` | empty | Optional URL prefix when serving behind a reverse proxy, e.g. `/opendirector` |
 
 ### Without Docker
 

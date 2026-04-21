@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { appPath, appWsUrl } from '@/lib/app-path';
 import type { Signal, ExecutionLogEntry, TallyState, Block, Element } from '@/lib/types';
 import type { BlockTiming } from '@/lib/timing';
 
@@ -77,7 +78,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   wsConnected: false,
 
   loadShow: async (showId) => {
-    const res = await fetch(`/api/shows/${showId}/rundown`);
+    const res = await fetch(appPath(`/api/shows/${showId}/rundown`));
     if (!res.ok) return;
     const data = await res.json();
     set({
@@ -93,9 +94,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
     const { ws: existingWs } = get();
     if (existingWs) existingWs.close();
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const ws = new WebSocket(wsUrl);
+    const ws = new WebSocket(appWsUrl('/ws'));
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: 'join', payload: { showId } }));
@@ -207,7 +206,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   },
 
   sendSignal: async (showId, type, value) => {
-    await fetch(`/api/shows/${showId}/signals`, {
+    await fetch(appPath(`/api/shows/${showId}/signals`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, value }),
@@ -215,7 +214,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   },
 
   clearSignals: async (showId) => {
-    await fetch(`/api/shows/${showId}/signals`, { method: 'DELETE' });
+    await fetch(appPath(`/api/shows/${showId}/signals`), { method: 'DELETE' });
   },
 
   setCurrentBlock: (blockId) => {
@@ -234,7 +233,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
 
       // Persist actual_duration_sec + status:done to server (fire-and-forget)
       if (showId) {
-        fetch(`/api/shows/${showId}/blocks/${currentBlockId}`, {
+        fetch(appPath(`/api/shows/${showId}/blocks/${currentBlockId}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ actual_duration_sec: actualSec, status: 'done' }),
@@ -255,7 +254,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
 
       // Mark as on_air (fire-and-forget)
       if (showId) {
-        fetch(`/api/shows/${showId}/blocks/${blockId}`, {
+        fetch(appPath(`/api/shows/${showId}/blocks/${blockId}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'on_air' }),
@@ -312,7 +311,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   stopShow: async () => {
     const { showId, blocks } = get();
     if (!showId) return;
-    const res = await fetch(`/api/shows/${showId}/status`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/status`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'ready' }),
@@ -320,7 +319,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
     if (res.ok) {
       // Reset all block statuses to pending
       for (const b of blocks) {
-        fetch(`/api/shows/${showId}/blocks/${b.id}`, {
+        fetch(appPath(`/api/shows/${showId}/blocks/${b.id}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'pending', actual_duration_sec: null }),
@@ -340,7 +339,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   goLive: async () => {
     const { showId } = get();
     if (!showId) return;
-    const res = await fetch(`/api/shows/${showId}/status`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/status`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'live' }),
@@ -353,7 +352,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   goReady: async () => {
     const { showId, blocks } = get();
     if (!showId) return;
-    const res = await fetch(`/api/shows/${showId}/status`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/status`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'ready' }),
@@ -361,7 +360,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
     if (res.ok) {
       // Reset all block statuses
       for (const b of blocks) {
-        fetch(`/api/shows/${showId}/blocks/${b.id}`, {
+        fetch(appPath(`/api/shows/${showId}/blocks/${b.id}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'pending', actual_duration_sec: null }),
@@ -381,7 +380,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => ({
   goRehearsal: async () => {
     const { showId } = get();
     if (!showId) return;
-    const res = await fetch(`/api/shows/${showId}/status`, {
+    const res = await fetch(appPath(`/api/shows/${showId}/status`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'rehearsal' }),

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { appPath } from '@/lib/app-path';
 
 interface ReleaseInfo {
   updateAvailable: boolean;
@@ -11,11 +12,6 @@ interface ReleaseInfo {
   mandatory: boolean;
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 export default function DownloadPage() {
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,7 +19,7 @@ export default function DownloadPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch('/api/automator/update-check?currentVersion=0.0.0')
+    fetch(appPath('/api/automator/update-check?currentVersion=0.0.0'))
       .then((res) => {
         if (!res.ok) throw new Error('Failed to check for releases');
         return res.json();
@@ -93,7 +89,7 @@ export default function DownloadPage() {
             </div>
 
             <a
-              href="/api/automator/download"
+              href={appPath('/api/automator/download')}
               className="inline-flex items-center gap-2 px-6 py-3 bg-od-accent text-white rounded-lg hover:bg-blue-500 transition-colors font-medium text-lg"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
