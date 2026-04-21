@@ -10,6 +10,7 @@ import { ExecutionLog } from '@/components/ExecutionLog';
 import { ControlBar } from '@/components/ControlBar';
 import { MediaSyncPanel } from '@/components/MediaSyncPanel';
 import { PreflightPanel } from '@/components/PreflightPanel';
+import { AutomatorUpdatePrompt } from '@/components/AutomatorUpdatePrompt';
 
 export default function App() {
   const tabs = useAutomatorStore(s => s.tabs);
@@ -162,11 +163,19 @@ export default function App() {
   }, []);
 
   if (tabs.size === 0) {
-    return <ConnectionScreen />;
+    return (
+      <div className="flex flex-col h-screen bg-od-bg">
+        <AutomatorUpdatePrompt />
+        <div className="flex-1 min-h-0">
+          <ConnectionScreen />
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col h-screen bg-od-bg">
+      <AutomatorUpdatePrompt />
       <StatusBar />
       <TabBar />
       <div className="flex-1 overflow-hidden flex">

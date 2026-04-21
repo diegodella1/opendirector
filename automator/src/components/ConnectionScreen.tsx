@@ -29,7 +29,7 @@ export function ConnectionScreen() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-od-bg">
+    <div className="flex items-center justify-center h-full bg-od-bg">
       <div className="bg-od-surface border border-od-surface-light rounded-xl p-8 w-[480px]">
         <h1 className="text-2xl font-bold text-white mb-1">OpenDirector</h1>
         <p className="text-od-text-dim text-sm mb-6">Automator</p>
